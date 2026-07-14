@@ -1,0 +1,36 @@
+stage_id: 3-case-generation
+display_name: 3.用例生成
+driver_type: skill
+required_inputs:
+  - name: test-plan-docs
+    paths:
+      - docs/test-plan/测试方案.md
+      - docs/test-plan/测试计划.md
+    match: all
+    path_type: file
+required_outputs:
+  - name: generated-cases
+    paths:
+      - docs/cases/功能测试用例.md
+      - docs/cases/接口测试用例.md
+      - docs/cases/性能测试用例.md
+      - docs/cases/安全测试用例.md
+    match: all
+    path_type: file
+required_gates: []
+archive_requirements:
+  requires_run_archive: false
+  required_subdirs: []
+completion_rules:
+  - 四类原始测试用例均已生成。
+status_rules:
+  blocked: 测试方案或测试计划缺失。
+  not_ready: 原始测试用例未全部生成。
+  completed: 用例生成阶段已完成。
+entrypoints:
+  skills:
+    - case-gen-functional
+    - case-gen-api
+    - case-gen-performance
+    - case-gen-security
+  checker: scripts/check-stage.ps1

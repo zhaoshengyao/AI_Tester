@@ -1,0 +1,41 @@
+version: 1
+required_top_level_keys:
+  - stage_id
+  - display_name
+  - driver_type
+  - required_inputs
+  - required_outputs
+  - required_gates
+  - archive_requirements
+  - completion_rules
+  - status_rules
+  - entrypoints
+allowed_driver_types:
+  - skill
+  - script
+  - hybrid
+allowed_check_modes:
+  - preflight
+  - full
+requirement_group_keys:
+  - name
+  - paths
+  - match
+  - path_type
+allowed_match_values:
+  - any
+  - all
+allowed_path_types:
+  - file
+  - dir
+  - file_or_dir
+gate_types:
+  - file_exists
+  - dir_exists
+  - external
+status_values:
+  - ready
+  - blocked
+  - not_ready
+  - needs_update
+  - completed

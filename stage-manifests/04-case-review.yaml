@@ -1,0 +1,38 @@
+stage_id: 4-case-review
+display_name: 4.用例评审
+driver_type: skill
+required_inputs:
+  - name: generated-cases
+    paths:
+      - docs/cases/功能测试用例.md
+      - docs/cases/接口测试用例.md
+      - docs/cases/性能测试用例.md
+      - docs/cases/安全测试用例.md
+      - docs/cases/原型系统测试用例.md
+    match: any
+    path_type: file
+required_outputs:
+  - name: reviewed-cases
+    paths:
+      - docs/cases/功能测试用例-评审版.md
+      - docs/cases/接口测试用例-评审版.md
+      - docs/cases/性能测试用例-评审版.md
+      - docs/cases/安全测试用例-评审版.md
+      - docs/cases/原型系统测试用例-评审版.md
+      - docs/cases/测试用例评审记录.md
+      - docs/cases/测试用例覆盖矩阵.md
+    match: all
+    path_type: file
+required_gates: []
+archive_requirements:
+  requires_run_archive: false
+  required_subdirs: []
+completion_rules:
+  - 评审版测试用例、评审记录和覆盖矩阵均已生成。
+status_rules:
+  blocked: 原始测试用例缺失。
+  not_ready: 评审版测试用例、评审记录或覆盖矩阵未全部生成。
+  completed: 用例评审阶段已完成。
+entrypoints:
+  skill: case-review
+  checker: scripts/check-stage.ps1

@@ -1,0 +1,33 @@
+stage_id: 1-req-analysis
+display_name: 1.需求分析
+driver_type: skill
+required_inputs:
+  - name: requirements-or-prototype-or-api
+    paths:
+      - docs/requirements
+      - docs/prototype
+      - docs/api
+    match: any
+    path_type: dir
+required_outputs:
+  - name: analysis-report
+    paths:
+      - docs/analysis/需求分析报告.md
+    match: all
+    path_type: file
+required_gates:
+  - name: discoverable-input-source
+    gate_type: external
+    description: 需求分析允许基于项目地址或文档输入建立基线。
+archive_requirements:
+  requires_run_archive: false
+  required_subdirs: []
+completion_rules:
+  - 需求分析报告存在且非空，包含完整的模块结构分析（一级、二级、三级模块）。
+status_rules:
+  blocked: 缺少需求、原型和接口文档输入。
+  not_ready: 需求分析报告未生成或内容不完整。
+  completed: 需求分析报告已落盘，包含23个模块的完整分析（9个一级+10个二级+4个三级），可进入测试设计。
+entrypoints:
+  skill: req-analysis
+  checker: scripts/check-stage.ps1

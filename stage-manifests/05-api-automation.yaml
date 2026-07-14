@@ -1,0 +1,55 @@
+stage_id: 5-api-automation
+display_name: 5.API自动化
+driver_type: script
+required_inputs:
+  - name: reviewed-api-case
+    paths:
+      - docs/cases/接口测试用例-评审版.md
+    match: all
+    path_type: file
+required_outputs:
+  - name: api-raw-report
+    paths:
+      - tests/api/reports
+    match: all
+    path_type: dir
+  - name: api-coverage-matrix
+    paths:
+      - docs/test-runs/{run_id}/reports/API自动化覆盖矩阵.md
+    match: all
+    path_type: file
+    must_reference_run_id: true
+  - name: api-formal-report
+    paths:
+      - docs/test-runs/{run_id}/reports/接口自动化测试报告.md
+    match: all
+    path_type: file
+    must_reference_run_id: true
+  - name: api-defect-doc
+    paths:
+      - docs/test-runs/{run_id}/defects/接口缺陷清单.md
+    match: all
+    path_type: file
+    must_reference_run_id: true
+required_gates:
+  - name: service-and-auth-gates
+    gate_type: external
+    description: 服务/API 连通性、真实认证和账号可用性由脚本执行期校验。
+archive_requirements:
+  requires_run_archive: true
+  required_subdirs:
+    - reports
+    - defects
+    - raw
+    - stage-status
+completion_rules:
+  - API raw 结果、正式报告和缺陷清单或未执行说明均已落盘。
+status_rules:
+  blocked: 评审版接口用例或覆盖矩阵缺失，或服务/API gate 不满足。
+  not_ready: API 自动化正式产物未完整生成。
+  needs_update: 正式产物未引用当前批次。
+  completed: API 自动化阶段产物完整。
+entrypoints:
+  script_ps1: scripts/run-api-tests.ps1
+  script_sh: scripts/run-api-tests.sh
+  checker: scripts/check-stage.ps1

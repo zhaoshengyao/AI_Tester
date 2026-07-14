@@ -1,0 +1,29 @@
+stage_id: 2-test-design
+display_name: 2.测试设计
+driver_type: skill
+required_inputs:
+  - name: analysis-report
+    paths:
+      - docs/analysis/需求分析报告.md
+    match: all
+    path_type: file
+required_outputs:
+  - name: test-plan-docs
+    paths:
+      - docs/test-plan/测试方案.md
+      - docs/test-plan/测试计划.md
+    match: all
+    path_type: file
+required_gates: []
+archive_requirements:
+  requires_run_archive: false
+  required_subdirs: []
+completion_rules:
+  - 测试方案和测试计划都已生成。
+status_rules:
+  blocked: 需求分析报告缺失。
+  not_ready: 测试方案或测试计划未生成。
+  completed: 测试设计阶段已完成。
+entrypoints:
+  skill: test-plan
+  checker: scripts/check-stage.ps1
