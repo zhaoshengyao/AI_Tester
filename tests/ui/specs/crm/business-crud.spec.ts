@@ -1,39 +1,23 @@
 import { test, expect, Page } from '@playwright/test';
 import { navigateToPage } from '../../utils/app';
 import { BusinessManagementPage } from '../../pages/BusinessManagementPage';
-import { TestDataManager } from '../../utils/test-data-manager';
 
 const BUSINESS_PAGE = '/business/BusinessOverview';
 
 test.describe('商机管理 CRUD 测试', () => {
   let page: Page;
   let businessPage: BusinessManagementPage;
-  let testDataManager: TestDataManager;
 
   test.beforeEach(async ({ page: testPage }) => {
     page = testPage;
     businessPage = new BusinessManagementPage(page);
-    testDataManager = new TestDataManager();
     await navigateToPage(page, BUSINESS_PAGE);
-  });
-
-  test.afterEach(async () => {
-    await testDataManager.cleanupCreatedData();
-    await testDataManager.cleanupTestDataByPattern();
   });
 
   test('FUNC-BUSINESS-001 创建商机-填写完整信息', async () => {
     try {
-      const businessData = testDataManager.loadTestData('business');
       const dialog = await businessPage.clickAddButton();
-      await dialog.fillBusinessName(businessData.businessName);
-      await dialog.fillCustomerName(businessData.customerName);
-      await dialog.fillContact('测试联系人');
-      await dialog.fillAmount(businessData.amount.toString());
-      await dialog.fillStage(businessData.stage);
-      await dialog.fillStatus('进行中');
-      await dialog.fillDescription('自动化测试创建');
-      await dialog.submit();
+      await dialog.completeCreateBusiness();
       
       const toast = await businessPage.getToastMessage();
       if (toast && toast.includes('成功')) {

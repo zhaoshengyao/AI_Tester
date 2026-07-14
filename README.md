@@ -97,7 +97,7 @@ flowchart TD
 
 ## 阶段流程
 
-当前流程分为 10 个阶段。
+当前流程分为 11 个阶段。
 
 | 阶段 | 目标 | 主要产物 | 驱动方式 |
 |------|------|----------|----------|
@@ -108,8 +108,9 @@ flowchart TD
 | 5. 覆盖矩阵 | 映射评审版用例到脚本、执行层级、状态和断言来源 | `docs/reports/*覆盖矩阵.md` | `coverage-matrix` skill |
 | 6. API 自动化 | 生成/执行 pytest 接口自动化，先 smoke 再决策 | `tests/api/`、接口报告、接口缺陷清单 | `api-auto` skill + `scripts/run-api-tests.*` |
 | 7. UI 自动化 | 生成/执行 Playwright UI 自动化和兼容性测试 | `tests/ui/`、UI 报告、UI 缺陷清单 | `ui-auto-playwright` skill + `scripts/run-ui-tests.*` |
-| 8. 性能测试 | 使用 Locust，先性能 smoke，再决定是否加压 | `tests/performance/locust/`、性能报告、缺陷清单 | `perf-locust` skill + `scripts/run-perf-tests.*` |
-| 9. 安全测试 | 使用自定义安全扫描器，先安全基线，再决定是否主动扫描 | `tests/security/`、安全报告、漏洞清单 | `security-zap` skill + `scripts/run-security-tests.*` |
+
+| 8. 性能测试 | 使用 Locust，先性能 smoke，再决定是否加压 | `tests/performance/locust/`、性能报告、缺陷清单 | `perf-locust` skill + `scripts/run-locust-*.ps1` |
+| 9. 安全测试 | 使用 ZAP，先安全基线，再决定是否主动扫描 | `tests/security/`、安全报告、漏洞清单 | `security-zap` skill + `scripts/run-security-tests.*` |
 | 10. 系统测试报告 | 汇总所有专项测试结果，形成系统测试结论 | 系统测试报告 | `system-test-report` skill |
 | 11. 测试知识沉淀 | 沉淀可复用业务规则、回归资产、缺陷模式和下一轮建议 | `docs/knowledge/*.md` | `knowledge-base` skill |
 
@@ -234,7 +235,8 @@ bash scripts/check-stage.sh 5-api-automation 20260430-101500 full --write-status
 | `7-performance` | `stage-manifests/07-performance.yaml` |
 | `8-security` | `stage-manifests/08-security.yaml` |
 | `9-system-test-report` | `stage-manifests/09-system-test-report.yaml` |
-| `10-knowledge-base` | `stage-manifests/10-knowledge-base.yaml` |
+| `10-system-test-report` | `stage-manifests/10-system-test-report.yaml` |
+| `11-knowledge-base` | `stage-manifests/11-knowledge-base.yaml` |
 
 ## 自动化执行策略
 
@@ -266,7 +268,8 @@ bash scripts/check-stage.sh 5-api-automation 20260430-101500 full --write-status
 
 ### 安全测试
 
-- 使用自定义安全扫描器（支持扩展为 ZAP）。
+- 使用 ZAP。
+- 本机示例路径：`C:\Program Files\ZAP\Zed Attack Proxy`。
 - 先做安全基线，确认授权范围、认证上下文、目标稳定性和误伤风险。
 - 只有授权明确、目标稳定、性能风险可接受时，才主动扫描。
 
@@ -437,7 +440,7 @@ docs/test-runs/YYYYMMDD-HHMMSS/
 
 ### 已具备
 
-- 10 阶段完整测试流程配置。
+- 11 阶段完整测试流程配置。
 - 5 类核心 agent 职责设计。
 - 15 个阶段 skill。
 - API/UI/性能/安全统一执行入口。

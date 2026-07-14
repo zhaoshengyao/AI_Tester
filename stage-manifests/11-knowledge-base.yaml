@@ -1,5 +1,5 @@
-stage_id: 10-knowledge-base
-display_name: 10.测试知识沉淀（增量追加）
+stage_id: 11-knowledge-base
+display_name: 11.测试知识沉淀（增量追加）
 driver_type: skill
 required_inputs:
   - name: system-report

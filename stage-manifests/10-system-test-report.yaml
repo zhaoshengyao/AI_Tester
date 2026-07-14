@@ -1,5 +1,5 @@
-stage_id: 9-system-test-report
-display_name: 9.系统测试报告（增量追加）
+stage_id: 10-system-test-report
+display_name: 10.系统测试报告（增量追加）
 driver_type: skill
 required_inputs:
   - name: batch-summary
