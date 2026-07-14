@@ -1,5 +1,5 @@
-stage_id: 8-performance
-display_name: 8.性能测试
+stage_id: 7-performance
+display_name: 7.性能测试
 driver_type: script
 required_inputs:
   - name: reviewed-performance-case

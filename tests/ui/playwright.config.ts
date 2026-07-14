@@ -41,7 +41,7 @@ export default defineConfig({
   testDir: './specs',
   timeout: 60_000,
   retries: 2,
-  workers: 1,
+  workers: process.env.CI ? 2 : 4,
   testIgnore: ['**/prototype/**/*.spec.ts'],
   reporter: [
     ['html', { outputFolder: './reports/html', open: 'never' }],

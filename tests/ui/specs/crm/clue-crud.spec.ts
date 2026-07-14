@@ -1,23 +1,38 @@
 import { test, expect, Page } from '@playwright/test';
 import { navigateToPage } from '../../utils/app';
 import { ClueManagementPage } from '../../pages/ClueManagementPage';
+import { TestDataManager } from '../../utils/test-data-manager';
 
 const CLUE_PAGE = '/marketing/clue';
 
 test.describe('线索管理 CRUD 测试', () => {
   let page: Page;
   let cluePage: ClueManagementPage;
+  let testDataManager: TestDataManager;
 
   test.beforeEach(async ({ page: testPage }) => {
     page = testPage;
     cluePage = new ClueManagementPage(page);
+    testDataManager = new TestDataManager();
     await navigateToPage(page, CLUE_PAGE);
+  });
+
+  test.afterEach(async () => {
+    await testDataManager.cleanupCreatedData();
+    await testDataManager.cleanupTestDataByPattern();
   });
 
   test('FUNC-CLUE-001 创建线索-填写完整信息', async () => {
     try {
+      const clueData = testDataManager.loadTestData('clue');
       const dialog = await cluePage.clickAddButton();
-      await dialog.completeCreateClue();
+      await dialog.fillClueName(clueData.name);
+      await dialog.fillCompanyName(clueData.company);
+      await dialog.fillContact('测试联系人');
+      await dialog.fillPhone(clueData.phone);
+      await dialog.fillSource(clueData.source);
+      await dialog.fillStatus(clueData.status);
+      await dialog.submit();
       
       const toast = await cluePage.getToastMessage();
       if (toast && toast.includes('成功')) {
