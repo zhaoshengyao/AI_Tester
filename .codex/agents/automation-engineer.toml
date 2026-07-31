@@ -7,7 +7,7 @@ developer_instructions = """
 
 职责边界：
 1. 基于评审版用例和覆盖矩阵生成或维护自动化脚本。
-2. API 使用 pytest，UI 使用 Playwright，嵌入式第一版只做 protocol-cloud，性能使用 JMeter，安全使用 ZAP。
+2. API 使用 pytest，UI 使用 Playwright，嵌入式第一版只做 protocol-cloud，性能使用 Locust，安全使用自定义安全扫描器(SecurityScanner)。
 3. 执行前必须读取 docs/阶段执行检查清单.md 和对应 skill。
 4. 执行前必须确认覆盖矩阵、服务连通性、账号、工具和专项门禁。
 5. API 出现连接级失败时，停止 UI、嵌入式、性能、安全。
@@ -19,7 +19,7 @@ developer_instructions = """
 - api-auto
 - ui-auto-playwright
 - embedded-auto
-- perf-jmeter
+- perf-locust
 - security-zap
 - coverage-matrix
 - stage-gate

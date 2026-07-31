@@ -1,0 +1,41 @@
+✅ 点击前截图已保存
+
+找到包含"新增"的按钮数量: 2
+  按钮0: text="新增跟进", class=el-button el-button--small is-plain, visible=true, enabled=true, rect={"x":664,"y":13,"width":88,"height":24}
+  按钮1: text="新增", class=el-button el-button--primary el-button--default is-plain, visible=true, enabled=true, rect={"x":78,"y":254,"width":80,"height":32}
+
+✅ 准备点击第一个新增按钮
+✅ 已点击新增按钮
+❌ 等待弹窗超时
+
+=== 检查所有可能的弹窗元素 ===
+el-overlay数量: 7
+  overlay0: class=el-overlay el-modal-dialog, visible=false, rect=null
+  overlay1: class=el-overlay is-drawer el-modal-drawer, visible=false, rect=null
+  overlay2: class=el-overlay el-modal-dialog, visible=false, rect=null
+  overlay3: class=el-overlay el-modal-dialog, visible=false, rect=null
+  overlay4: class=el-overlay el-modal-dialog, visible=false, rect=null
+  overlay5: class=el-overlay el-modal-dialog, visible=false, rect=null
+  overlay6: class=el-overlay el-modal-dialog, visible=false, rect=null
+
+[role="dialog"]数量: 7
+  dialog0: class=el-overlay-dialog, visible=false, rect=null
+  dialog1: class=el-drawer rtl, visible=false, rect=null
+  dialog2: class=el-overlay-dialog, visible=false, rect=null
+  dialog3: class=el-overlay-dialog, visible=false, rect=null
+  dialog4: class=el-overlay-dialog, visible=false, rect=null
+  dialog5: class=el-overlay-dialog, visible=false, rect=null
+  dialog6: class=el-overlay-dialog, visible=false, rect=null
+
+body子元素数量: 10
+  DIV: id="app", class="", visible=true
+  SCRIPT: id="", class="", visible=false
+  svg: id="__svg__icons__dom__", class="", visible=false
+  DIV: id="z-index-manage", class="", visible=false
+  DIV: id="el-popper-container-6298", class="", visible=false
+  DIV: id="", class="el-overlay el-modal-dialog", visible=false
+  DIV: id="", class="el-overlay el-modal-dialog", visible=false
+  DIV: id="", class="el-overlay el-modal-dialog", visible=false
+  DIV: id="", class="el-overlay el-modal-dialog", visible=false
+  DIV: id="", class="el-overlay el-modal-dialog", visible=false
+✅ 无弹窗截图已保存

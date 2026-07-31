@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { navigateToPage } from '../../utils/app';
+import { navigateToPage, getAuthToken } from '../../utils/app';
 import { BusinessManagementPage } from '../../pages/BusinessManagementPage';
 import { TestDataManager } from '../../utils/test-data-manager';
 
@@ -13,8 +13,32 @@ test.describe('商机管理 CRUD 测试', () => {
   test.beforeEach(async ({ page: testPage }) => {
     page = testPage;
     businessPage = new BusinessManagementPage(page);
-    testDataManager = new TestDataManager();
+    const token = getAuthToken();
+    testDataManager = new TestDataManager(process.env.API_BASE_URL, token);
+    
+    // 通过菜单导航到商机管理页面
+    await page.goto('/index', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+    
+    // 展开商机管理子菜单
+    const businessSubMenu = page.locator('.el-sub-menu__title').filter({ hasText: '商机管理' }).first();
+    if ((await businessSubMenu.count()) > 0) {
+      await businessSubMenu.click();
+      await page.waitForTimeout(2000);
+      
+      // 点击商机总览链接
+      const businessLink = page.locator('a[href="/business/BusinessOverview"]').first();
+      if ((await businessLink.count()) > 0) {
+        await businessLink.click();
+        await page.waitForTimeout(5000);
+        console.log(`✅ 通过菜单导航到商机总览: ${page.url()}`);
+        return;
+      }
+    }
+    
+    // 备用方案：直接导航
     await navigateToPage(page, BUSINESS_PAGE);
+    console.log(`✅ 导航到商机总览页面: ${page.url()}`);
   });
 
   test.afterEach(async () => {
@@ -23,41 +47,30 @@ test.describe('商机管理 CRUD 测试', () => {
   });
 
   test('FUNC-BUSINESS-001 创建商机-填写完整信息', async () => {
-    try {
-      const businessData = testDataManager.loadTestData('business');
-      const dialog = await businessPage.clickAddButton();
-      await dialog.fillBusinessName(businessData.businessName);
-      await dialog.fillCustomerName(businessData.customerName);
-      await dialog.fillContact('测试联系人');
-      await dialog.fillAmount(businessData.amount.toString());
-      await dialog.fillStage(businessData.stage);
-      await dialog.fillStatus('进行中');
-      await dialog.fillDescription('自动化测试创建');
-      await dialog.submit();
-      
-      const toast = await businessPage.getToastMessage();
-      if (toast && toast.includes('成功')) {
-        console.log('✅ 商机创建成功');
-      }
-    } catch (error) {
-      console.log(`⚠️ 创建商机失败: ${error}`);
-    }
+    const businessData = testDataManager.loadTestData('business');
+    const dialog = await businessPage.clickAddButton();
+    await dialog.fillBusinessName(businessData.businessName);
+    // 客户名留空，使用回退策略自动选择第一个可用客户
+    await dialog.fillCustomerName('');
+    await dialog.fillCompetitor('竞争对手A');
+    await dialog.fillNextAction('跟进客户需求');
+    await dialog.fillRemark('自动化测试创建');
+    await dialog.submit();
+    
+    const toast = await businessPage.getToastMessage();
+    expect(toast ?? '').toContain('成功');
+    console.log('✅ 商机创建成功');
   });
 
   test('FUNC-BUSINESS-002 创建商机-必填字段校验', async () => {
-    try {
-      const dialog = await businessPage.clickAddButton();
-      await dialog.submit();
-      
-      const toast = await businessPage.getToastMessage();
-      if (toast && (toast.includes('不能为空') || toast.includes('必填'))) {
-        console.log('✅ 必填字段校验生效');
-      }
-      
-      await dialog.close();
-    } catch (error) {
-      console.log(`⚠️ 必填校验测试失败: ${error}`);
-    }
+    const dialog = await businessPage.clickAddButton();
+    await dialog.submit();
+    
+    const toast = await businessPage.getToastMessage();
+    expect(toast ?? '').toMatch(/不能为空|必填|请输入|请选择/);
+    
+    await dialog.close();
+    console.log('✅ 必填字段校验生效');
   });
 
   test('FUNC-BUSINESS-003 查询商机列表-搜索功能', async () => {

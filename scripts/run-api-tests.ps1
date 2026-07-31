@@ -1,8 +1,8 @@
-﻿param(
+﻿﻿﻿﻿param(
     [ValidateSet("smoke", "full", "failed-retest")]
-    [string]$Mode = $(if ($env:API_TEST_MODE) { $env:API_TEST_MODE } else { "full" }),
-    [int]$RequestTimeoutSeconds = $(if ($env:API_TIMEOUT_SECONDS) { [int]$env:API_TIMEOUT_SECONDS } else { 10 }),
-    [string]$PytestKeyword = $(if ($env:API_PYTEST_KEYWORD) { $env:API_PYTEST_KEYWORD } else { "" }),
+    [string]$Mode = "full",
+    [int]$RequestTimeoutSeconds = 10,
+    [string]$PytestKeyword = "",
     [string]$ForceNotExecutedReason = ""
 )
 
@@ -186,7 +186,7 @@ if (-not $env:API_BASE_URL) {
     $env:API_BASE_URL = "http://192.168.2.97:6089/prod-api"
 }
 if (-not $env:API_USERNAME) {
-    $env:API_USERNAME = if ($env:TEST_USERNAME) { $env:TEST_USERNAME } else { "admin" }
+    $env:API_USERNAME = if ($env:TEST_USERNAME) { $env:TEST_USERNAME } else { "ZhaoShengYao" }
 }
 
 if ($ForceNotExecutedReason) {
@@ -244,6 +244,9 @@ try {
 
 New-Item -ItemType Directory -Force -Path "reports\raw" | Out-Null
 Remove-Item -LiteralPath "reports\raw\api-test.log" -Force -ErrorAction SilentlyContinue
+
+New-Item -ItemType Directory -Force -Path "reports\junit" | Out-Null
+New-Item -ItemType Directory -Force -Path "reports\html" | Out-Null
 
 $pytestArgs = @()
 if ($Mode -eq "smoke") {

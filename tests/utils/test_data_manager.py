@@ -1,18 +1,22 @@
 import os
 import json
 import uuid
+import time
 import requests
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Tuple
+
 
 class TestDataManager:
-    def __init__(self, api_base_url: str = None, auth_token: str = None):
+    def __init__(self, api_base_url: Optional[str] = None, auth_token: Optional[str] = None):
         self.api_base_url = api_base_url or os.environ.get('API_BASE_URL', 'http://192.168.2.97:6089/prod-api')
         self.auth_token = auth_token
         self.headers = {'Authorization': f'Bearer {auth_token}'} if auth_token else {}
         self.data_dir = os.path.join(os.path.dirname(__file__), '../data')
         self.created_data: List[Dict[str, Any]] = []
         self._ensure_data_dir()
+        self._max_retries = 3
+        self._retry_delay = 1.0
     
     def _ensure_data_dir(self):
         if not os.path.exists(self.data_dir):
@@ -83,7 +87,7 @@ class TestDataManager:
         
         return data_templates.get(data_type, {})
     
-    def save_created_data(self, data_type: str, data_id: int, data_info: Dict[str, Any] = None):
+    def save_created_data(self, data_type: str, data_id: int, data_info: Optional[Dict[str, Any]] = None):
         record = {
             'type': data_type,
             'id': data_id,
@@ -101,19 +105,22 @@ class TestDataManager:
         with open(history_file, 'w', encoding='utf-8') as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
     
-    def cleanup_created_data(self):
+    def cleanup_created_data(self) -> List[Dict[str, Any]]:
         cleanup_results = []
         
         for record in reversed(self.created_data):
             try:
                 data_type = record['type']
                 data_id = record['id']
-                deleted = self._delete_data(data_type, data_id)
-                cleanup_results.append({
+                deleted, error = self._delete_data_with_retry(data_type, data_id)
+                result = {
                     'type': data_type,
                     'id': data_id,
                     'deleted': deleted
-                })
+                }
+                if error:
+                    result['error'] = error
+                cleanup_results.append(result)
             except Exception as e:
                 cleanup_results.append({
                     'type': record['type'],
@@ -133,28 +140,41 @@ class TestDataManager:
         
         return cleanup_results
     
-    def _delete_data(self, data_type: str, data_id: int) -> bool:
+    def _delete_data_with_retry(self, data_type: str, data_id: int) -> Tuple[bool, Optional[str]]:
         delete_endpoints = {
             'customer': f'/crm/customer/{data_id}',
             'business': f'/crm/business/{data_id}',
             'clue': f'/crm/clue/{data_id}',
-            'product': f'/crm/product/{data_id}',
+            'product': f'/product/{data_id}',
             'quotation': f'/crm/quotation/{data_id}'
         }
         
         endpoint = delete_endpoints.get(data_type)
         if not endpoint:
-            return False
+            return False, f"Unknown data type: {data_type}"
         
-        try:
-            response = requests.delete(
-                f'{self.api_base_url}{endpoint}',
-                headers=self.headers,
-                timeout=10
-            )
-            return response.status_code in [200, 204]
-        except Exception:
-            return False
+        last_error = None
+        for attempt in range(self._max_retries):
+            try:
+                response = requests.delete(
+                    f'{self.api_base_url}{endpoint}',
+                    headers=self.headers,
+                    timeout=10
+                )
+                if response.status_code in [200, 204, 404]:
+                    return True, None
+                last_error = f"HTTP {response.status_code}: {response.text}"
+            except requests.exceptions.ConnectionError as e:
+                last_error = f"Connection error: {str(e)}"
+            except requests.exceptions.Timeout as e:
+                last_error = f"Timeout: {str(e)}"
+            except Exception as e:
+                last_error = f"Unexpected error: {str(e)}"
+            
+            if attempt < self._max_retries - 1:
+                time.sleep(self._retry_delay * (attempt + 1))
+        
+        return False, last_error
     
     def init_test_data(self) -> Dict[str, Any]:
         init_data = {}
@@ -232,5 +252,6 @@ class TestDataManager:
             pass
         return 0
 
-def get_test_data_manager(api_base_url: str = None, auth_token: str = None) -> TestDataManager:
+
+def get_test_data_manager(api_base_url: Optional[str] = None, auth_token: Optional[str] = None) -> TestDataManager:
     return TestDataManager(api_base_url, auth_token)

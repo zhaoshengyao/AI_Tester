@@ -1,4 +1,4 @@
-﻿param(
+param(
 
     [string]$ForceNotExecutedReason = "",
 
@@ -46,7 +46,7 @@ function Load-EnvFile {
 
 
 
-$stageId = "8-performance"
+$stageId = "7-performance"
 
 $stageName = "性能测试"
 
@@ -356,6 +356,117 @@ function Write-StageResult {
 
 
 
+# ============ 综合性能测试报告归档 ============
+# 规则：若 tests/performance/locust/results/ 下存在综合报告（分阶段执行产物），
+# 则自动归档到当前批次目录，覆盖 Write-PerfDocuments 生成的简化报告。
+# 归档内容：综合报告、HTML原始报告、分阶段执行日志
+# 参考配置：tests/performance/locust/config/load_profiles.yaml -> report_generation.archive
+function Archive-ComprehensiveReportIfExist {
+
+    param()
+
+
+
+    $locustResultsDir = Join-Path $root "tests\performance\locust\results"
+
+    if (-not (Test-Path -LiteralPath $locustResultsDir)) {
+
+        return
+
+    }
+
+
+
+    # 查找最新的综合报告 PERFORMANCE_REPORT_*.md
+
+    $comprehensiveReport = Get-ChildItem $locustResultsDir -Filter "PERFORMANCE_REPORT_*.md" -ErrorAction SilentlyContinue |
+
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+
+
+
+    if (-not $comprehensiveReport) {
+
+        return
+
+    }
+
+
+
+    Write-Host ""
+
+    Write-Host "📋 发现综合性能测试报告，归档到批次目录: $($comprehensiveReport.Name)" -ForegroundColor Magenta
+
+
+
+    # 1. 归档综合报告（覆盖 Write-PerfDocuments 生成的简化报告）
+
+    Copy-Item -Path $comprehensiveReport.FullName -Destination $formalReport -Force
+
+    Write-Host "  ✅ 综合报告已归档: $formalReport" -ForegroundColor Green
+
+
+
+    # 2. 归档 HTML 原始报告
+
+    $rawPerfDir = Join-Path $runContext.RunDir "raw\performance"
+
+    if (-not (Test-Path $rawPerfDir)) {
+
+        New-Item -ItemType Directory -Force -Path $rawPerfDir | Out-Null
+
+    }
+
+
+
+    $htmlFiles = Get-ChildItem $locustResultsDir -Filter "*.html" -ErrorAction SilentlyContinue
+
+    foreach ($htmlFile in $htmlFiles) {
+
+        Copy-Item -Path $htmlFile.FullName -Destination $rawPerfDir -Force
+
+    }
+
+    Write-Host "  ✅ HTML报告已归档: $($htmlFiles.Count) 个" -ForegroundColor Green
+
+
+
+    # 3. 归档分阶段执行日志（如果有）
+
+    $stagedDir = Join-Path $locustResultsDir "staged"
+
+    if (Test-Path $stagedDir) {
+
+        $stagedArchiveDir = Join-Path $rawPerfDir "staged"
+
+        if (-not (Test-Path $stagedArchiveDir)) {
+
+            New-Item -ItemType Directory -Force -Path $stagedArchiveDir | Out-Null
+
+        }
+
+
+
+        $stagedFiles = Get-ChildItem $stagedDir -Recurse -File -ErrorAction SilentlyContinue
+
+        foreach ($file in $stagedFiles) {
+
+            Copy-Item -Path $file.FullName -Destination $stagedArchiveDir -Force
+
+        }
+
+        Write-Host "  ✅ 分阶段日志已归档: $($stagedFiles.Count) 个" -ForegroundColor Green
+
+    }
+
+
+
+    Write-Host ""
+
+}
+
+
+
 if ($ForceNotExecutedReason) {
 
     $notExecutedFile = Join-Path $resultDir "not-executed.txt"
@@ -470,6 +581,14 @@ if ($exitCode -eq 0 -or $exitCode -eq 1) {
 
     Write-PerfDocuments -ExecutionStatus "通过" -Decision "collect-evidence" -Summary "性能测试执行完成，需结合指标阈值做进一步判定。" -Reason "当前脚本只保证原始结果和正式产物落盘，阈值解释仍需报告归并。" -ExitCode $exitCode -CommandLine $commandLine -HtmlReportPath $htmlReport
 
+
+
+    # 归档综合报告（若分阶段执行产物存在，覆盖简化报告）
+
+    Archive-ComprehensiveReportIfExist
+
+
+
     Write-StageResult -Status "passed" -Decision "collect-evidence" -Reason "" -InputsChecked $preflightInputs -GatesChecked $gateChecks -EvidencePaths $evidence
 
     exit 0
@@ -481,6 +600,14 @@ if ($exitCode -eq 0 -or $exitCode -eq 1) {
 $failureReason = "Locust 执行失败或存在性能异常，请结合 HTML 报告和日志继续分析。"
 
 Write-PerfDocuments -ExecutionStatus "失败" -Decision "collect-evidence" -Summary "性能测试执行完成但存在失败或异常。" -Reason $failureReason -ExitCode $exitCode -CommandLine $commandLine -HtmlReportPath $htmlReport
+
+
+
+# 归档综合报告（若分阶段执行产物存在，覆盖简化报告）
+
+Archive-ComprehensiveReportIfExist
+
+
 
 Write-StageResult -Status "failed" -Decision "collect-evidence" -Reason $failureReason -InputsChecked $preflightInputs -GatesChecked $gateChecks -EvidencePaths $evidence
 

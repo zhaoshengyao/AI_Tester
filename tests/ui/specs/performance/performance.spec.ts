@@ -1,17 +1,15 @@
 import { test, expect, Page } from '@playwright/test';
 import { navigateToPage } from '../../utils/app';
-import { SystemManagementPage } from '../../pages/SystemManagementPage';
+
 
 const PERFORMANCE_PAGE = '/performance';
 
 test.describe('绩效管理', () => {
   let page: Page;
-  let performancePage: SystemManagementPage;
   let pageAccessible = true;
 
   test.beforeEach(async ({ page: testPage }) => {
     page = testPage;
-    performancePage = new SystemManagementPage(page);
     await navigateToPage(page, PERFORMANCE_PAGE);
     if (page.url().includes('/noRedirect')) {
       pageAccessible = false;

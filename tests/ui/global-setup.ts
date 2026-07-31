@@ -2,7 +2,7 @@ import { FullConfig, chromium } from '@playwright/test';
 import dotenv from 'dotenv';
 import { mkdirSync } from 'fs';
 
-const envConfig = dotenv.config({ path: '../.env' });
+dotenv.config({ path: '../.env' });
 
 const TEST_USERNAME = process.env.TEST_USERNAME || 'ZhaoShengYao';
 const TEST_PASSWORD = process.env.TEST_PASSWORD || '123456';
@@ -32,7 +32,7 @@ async function globalSetup(config: FullConfig) {
     
     console.log(`🔐 加密后的密码: ${encryptedPassword}`);
 
-    await page.route('**/auth/login', async (route) => {
+    await page.route('**/prod-api/auth/login', async (route) => {
       const request = route.request();
       const postData = JSON.parse(request.postData() || '{}');
       
@@ -59,7 +59,7 @@ async function globalSetup(config: FullConfig) {
       });
     });
 
-    await page.locator('input[type="text"]').filter({ not: { hasClass: 'el-select__input' } }).first().fill(TEST_USERNAME);
+    await page.locator('input[type="text"]:not(.el-select__input)').first().fill(TEST_USERNAME);
     await page.locator('input[type="password"]').first().fill(TEST_PASSWORD);
     await page.getByRole('button', { name: /登\s*录/ }).first().click();
     
@@ -85,6 +85,25 @@ async function globalSetup(config: FullConfig) {
     
     await context.storageState({ path: '.auth/user.json' });
     console.log('✅ 全局登录成功，已保存认证状态');
+
+    const cookies = await context.cookies();
+    const tokenCookie = cookies.find(c => c.name === 'token' || c.name.includes('token'));
+    
+    if (tokenCookie) {
+      const token = tokenCookie.value;
+      console.log(`🔑 提取到Token: ${token.substring(0, 20)}...`);
+      require('fs').writeFileSync('.auth/token.txt', token, 'utf-8');
+      console.log('✅ Token已保存到 .auth/token.txt');
+    } else {
+      console.log('⚠️ 未找到Token cookie');
+      
+      const localStorage = await context.storageState();
+      const tokenFromStorage = localStorage.origins?.[0]?.localStorage?.find(item => item.name === 'token' || item.name.includes('token'));
+      if (tokenFromStorage) {
+        require('fs').writeFileSync('.auth/token.txt', tokenFromStorage.value, 'utf-8');
+        console.log('✅ Token已从localStorage保存到 .auth/token.txt');
+      }
+    }
   } catch (error) {
     console.error('❌ 全局登录失败:', error);
     

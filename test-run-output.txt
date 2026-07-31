@@ -1,0 +1,5 @@
+__Safe-Rm-Invoke-PowerShell: 
+Line |
+  15 |  … pgrep\bin'; powershell -ExecutionPolicy Bypass -File "d:\AICode\TestH …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | PowerShell.exe execution failed with exit code: 1

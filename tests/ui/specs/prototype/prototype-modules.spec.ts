@@ -30,7 +30,7 @@ test.describe('新原型功能模块详细分析', () => {
         const buttonTexts: string[] = [];
         for (let i = 0; i < Math.min(15, buttons.length); i++) {
           const text = await buttons[i].textContent();
-          const className = await buttons[i].getAttribute('class');
+          await buttons[i].getAttribute('class');
           if (text && text.trim()) {
             buttonTexts.push(text.trim());
           }
@@ -59,7 +59,7 @@ test.describe('新原型功能模块详细分析', () => {
         const uniqueTexts = [...new Set(pageTexts.filter(t => t.trim().length > 3 && t.trim().length < 50))].slice(0, 30);
         console.log('页面关键词:', uniqueTexts.join(', '));
         
-        await page.screenshot({ path: `d:\\AICode\\TestHub\\AITestDemo\\tests\\ui\\prototype-${menu.name.replace(/\s/g, '')}.png`, fullPage: true });
+        await page.screenshot({ path: `prototype-${menu.name.replace(/\s/g, '')}.png`, fullPage: true });
         
       } catch (error) {
         console.log(`❌ 分析 ${menu.name} 失败: ${(error as Error).message}`);
@@ -92,7 +92,7 @@ test.describe('新原型功能模块详细分析', () => {
       }
     }
     
-    await page.screenshot({ path: 'd:\\AICode\\TestHub\\AITestDemo\\tests\\ui\\prototype-roles.png' });
+    await page.screenshot({ path: 'prototype-roles.png' });
   });
   
   test('分析销售漏斗组件', async ({ page }) => {
@@ -113,6 +113,6 @@ test.describe('新原型功能模块详细分析', () => {
       console.log(`阶段${i}: ${text || ''}`);
     }
     
-    await page.screenshot({ path: 'd:\\AICode\\TestHub\\AITestDemo\\tests\\ui\\prototype-funnel.png' });
+    await page.screenshot({ path: 'prototype-funnel.png' });
   });
 });

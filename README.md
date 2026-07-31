@@ -1,4 +1,6 @@
-# AI 驱动完整测试流程配置项目
+# AutoTest Hub
+
+> **AutoTest Hub** 是一套 AI 驱动的完整测试流程配置平台，支持 API / UI / 性能 / 安全 全类型自动化测试。
 
 ## 项目定位
 
@@ -165,43 +167,393 @@ AI 应按阶段执行，不允许跳过前置产物。
 只有被测地址和账号密码，请先按需求分析阶段做黑盒探索，形成实测接口基线，再进入后续测试设计。
 ```
 
-此时需求分析报告不能假装知道完整业务需求，只能写“实际可观察行为”和“待确认项”。
+此时需求分析报告不能假装知道完整业务需求，只能写"实际可观察行为"和"待确认项"。
 
-### 3. 自动化执行入口
+### 3. 环境准备
 
-Windows 优先使用 PowerShell：
+所有测试类型共享同一套环境变量配置。
+
+#### 3.1 配置 .env 文件（项目根目录）
+
+在项目根目录创建 `.env` 文件：
+
+```env
+# 被测系统地址
+BASE_URL=http://192.168.2.97:6089
+API_BASE_URL=http://192.168.2.97:6089/prod-api
+
+# 测试账号
+TEST_USERNAME=ZhaoShengYao
+TEST_PASSWORD=123456
+API_USERNAME=ZhaoShengYao
+API_PASSWORD=123456
+
+# 超时配置（秒）
+API_TIMEOUT_SECONDS=10
+```
+
+#### 3.2 统一环境变量设置（可选）
 
 ```powershell
+# 加载 .env 并设置本机工具路径（Python、Node、Locust 等）
+.\scripts\set-test-env.ps1
+```
+
+#### 3.3 验证服务连通性
+
+```powershell
+# 验证后端 API 可达
+curl http://192.168.2.97:6089/prod-api/
+
+# 验证前端页面可达
+curl http://192.168.2.97:6089/
+```
+
+### 4. 执行入口总览
+
+项目提供两种执行模式：完整流程一键执行、单专项独立执行。
+
+| 执行模式 | Windows (PowerShell) | Linux (Bash) | 适用场景 |
+|----------|---------------------|--------------|----------|
+| 环境检查 | - | `scripts/setup-linux.sh` | Linux 首次部署前检查环境依赖 |
+| 完整流程 | `scripts/run-full-test-flow.ps1` | - | 需求→报告全链路一键执行（仅 Windows） |
+| API 测试 | `scripts/run-api-tests.ps1` | `scripts/run-api-tests.sh` | 单独执行接口自动化 |
+| UI 测试 | `scripts/run-ui-tests.ps1` | `scripts/run-ui-tests.sh` | 单独执行 UI 自动化 |
+| 性能测试 | `scripts/run-perf-tests.ps1` | `scripts/run-perf-tests.sh` | 单独执行 Locust 压测 |
+| 安全测试 | `scripts/run-security-tests.ps1` | `scripts/run-security-tests.sh` | 单独执行安全扫描 |
+
+> **双平台支持**：Windows 使用 PowerShell（`.ps1`），Linux 使用 Bash（`.sh`）。两套脚本功能完全对等，共享相同的测试代码和配置文件。
+>
+> **Linux 快速开始**：
+> ```bash
+> # 1. 检查环境（首次）
+> bash scripts/setup-linux.sh
+>
+> # 2. 添加执行权限（首次）
+> chmod +x scripts/*.sh
+>
+> # 3. 执行测试
+> bash scripts/run-api-tests.sh smoke      # API 冒烟
+> bash scripts/run-ui-tests.sh smoke       # UI 冒烟
+> bash scripts/run-perf-tests.sh smoke     # 性能冒烟
+> bash scripts/run-api-tests.sh full       # API 全量
+> bash scripts/run-perf-tests.sh stress    # 压力测试
+> ```
+
+### 5. 完整流程执行
+
+使用 `run-full-test-flow.ps1` 一键执行从 API 到安全的全流程：
+
+```powershell
+# 完整流程（API smoke → API full → UI → 性能 → 安全 → 系统报告）
 pwsh -File scripts/run-full-test-flow.ps1 `
-  -FrontendUrl "http://example.com" `
-  -ApiBaseUrl "http://example.com:8000" `
-  -Username "admin" `
-  -Password "******"
+  -FrontendUrl "http://192.168.2.97:6089" `
+  -ApiBaseUrl "http://192.168.2.97:6089/prod-api" `
+  -Username "ZhaoShengYao" `
+  -Password "123456"
 ```
 
-单项执行入口：
+#### 可选参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `-FrontendUrl` | （空） | 前端地址 |
+| `-ApiBaseUrl` | （空） | 后端 API 地址 |
+| `-Username` | （空） | 测试账号 |
+| `-Password` | （空） | 测试密码 |
+| `-RunId` | 自动生成 | 批次 ID（YYYYMMDD-HHMMSS） |
+| `-UiTimeoutSeconds` | 900 | UI 测试超时（秒） |
+| `-ApiTimeoutSeconds` | 240 | API 测试超时（秒） |
+| `-PerfTimeoutSeconds` | 300 | 性能测试超时（秒） |
+| `-SecurityTimeoutSeconds` | 300 | 安全测试超时（秒） |
+| `-Stages` | 全部 | 指定执行的阶段（如 `-Stages api,ui`） |
+| `-EndStage` | 全部 | 执行到指定阶段为止 |
 
 ```powershell
-pwsh -File scripts/run-api-tests.ps1 -Mode smoke
-pwsh -File scripts/run-api-tests.ps1 -Mode full
-pwsh -File scripts/run-ui-tests.ps1
-pwsh -File scripts/run-locust-api.ps1 -Mode smoke
-pwsh -File scripts/run-locust-api.ps1 -Mode full
-pwsh -File scripts/run-locust-ui.ps1
-pwsh -File scripts/run-security-tests.ps1
+# 只执行 API 和 UI 阶段
+pwsh -File scripts/run-full-test-flow.ps1 -Stages api,ui -FrontendUrl "..." -ApiBaseUrl "..."
+
+# 执行到性能测试为止
+pwsh -File scripts/run-full-test-flow.ps1 -EndStage performance -FrontendUrl "..." -ApiBaseUrl "..."
 ```
 
-Bash 入口也存在，适合 Linux、macOS 或 Git Bash：
+### 6. API 测试
+
+使用 pytest 执行接口自动化测试。
+
+#### 6.1 运行方式
+
+**Windows (PowerShell)**：
+```powershell
+# 冒烟测试（快速验证核心接口：登录、首页、设备列表等）
+pwsh -File scripts/run-api-tests.ps1 -Mode smoke
+
+# 全量测试（执行所有接口用例）
+pwsh -File scripts/run-api-tests.ps1 -Mode full
+
+# 失败重测（只重跑上次失败的用例）
+pwsh -File scripts/run-api-tests.ps1 -Mode failed-retest
+```
+
+**Linux (Bash)**：
+```bash
+# 冒烟测试
+bash scripts/run-api-tests.sh smoke
+
+# 全量测试
+bash scripts/run-api-tests.sh full
+
+# 失败重测
+bash scripts/run-api-tests.sh failed-retest
+
+# 按关键字过滤
+bash scripts/run-api-tests.sh full "test_crm_workflow"
+```
+
+#### 可选参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `-Mode` | full | 测试模式：`smoke` / `full` / `failed-retest` |
+| `-RequestTimeoutSeconds` | 10 | 单接口请求超时（秒） |
+| `-PytestKeyword` | （空） | pytest 关键字过滤（如 `-PytestKeyword "test_crm"`） |
+| `-ForceNotExecutedReason` | （空） | 强制标记未执行并写明原因 |
+
+#### 6.2 直接使用 pytest
+
+```powershell
+cd tests\api
+
+# 运行全部测试
+python -m pytest testsuites/ -v
+
+# 运行 smoke 标记
+python -m pytest testsuites/ -m smoke -v
+
+# 运行指定模块
+python -m pytest testsuites/crm/test_crm_workflow.py -v
+
+# 运行指定用例
+python -m pytest testsuites/crm/test_crm_api.py -k "test_auth" -v
+```
+
+#### 6.3 测试模块说明
+
+| 模块 | 文件 | 说明 |
+|------|------|------|
+| CRM API | `testsuites/crm/test_crm_api.py` | 核心 API 接口测试 |
+| CRUD | `testsuites/crm/test_crm_crud.py` | 增删改查基础操作 |
+| 业务流程 | `testsuites/crm/test_crm_workflow.py` | 线索→客户→商机→报价→赢单全流程 |
+| 数据一致性 | `testsuites/crm/test_data_consistency.py` | 接口间数据一致性验证 |
+| 跨接口一致性 | `testsuites/crm/test_cross_interface_consistency.py` | 跨模块数据关联验证 |
+| 月度环比 | `testsuites/crm/test_month_on_month_consistency.py` | 月度统计数据环比验证 |
+
+#### 6.4 结果查看
+
+```
+tests/api/reports/html/report.html      # HTML 报告
+tests/api/reports/junit/report.xml      # JUnit XML 报告
+docs/test-runs/{batch}/reports/接口自动化测试报告.md  # 正式报告
+docs/test-runs/{batch}/defects/接口缺陷清单.md       # 缺陷清单
+```
+
+### 7. UI 测试
+
+使用 Playwright + TypeScript 执行 UI 自动化测试。
+
+#### 7.1 环境要求
+
+- Node.js LTS（非 LTS 版本可能导致 Playwright worker 报 `spawn EPERM`）
+- 浏览器：Chromium（默认）/ Firefox / Edge
+- **Linux 额外依赖**：libnss3, libatk, libatk-bridge, libcups, libdrm, libxkbcommon, libxcomposite, libxdamage, libxrandr, libgbm, libpango, libcairo, libasound
+  ```bash
+  # Ubuntu/Debian 安装 Playwright 依赖
+  sudo apt install libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
+    libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2
+  ```
+
+#### 7.2 运行方式
+
+**Windows (PowerShell)**：
+```powershell
+# 执行全部 UI 测试
+pwsh -File scripts/run-ui-tests.ps1
+
+# 强制标记未执行（环境不满足时）
+pwsh -File scripts/run-ui-tests.ps1 -ForceNotExecutedReason "Node 版本非 LTS"
+```
+
+**Linux (Bash)**：
+```bash
+# 冒烟测试
+bash scripts/run-ui-tests.sh smoke
+
+# 全量测试
+bash scripts/run-ui-tests.sh
+```
+
+#### 7.3 直接使用 Playwright（跨平台）
 
 ```bash
-bash scripts/run-api-tests.sh
-bash scripts/run-ui-tests.sh
-bash scripts/run-locust-api.sh
-bash scripts/run-locust-ui.sh
+cd tests/ui
+
+# 安装依赖（首次，Windows/Linux 通用）
+npm install
+npx playwright install chromium
+
+# 运行全部测试
+npx playwright test
+
+# 运行冒烟测试
+npx playwright test specs/crm/crm-smoke.spec.ts
+
+# 运行兼容性测试（需设置 ENABLE_FIREFOX=1）
+npx playwright test --project=firefox
+
+# 查看报告
+npx playwright show-report reports/html
+
+# 指定测试文件
+npx playwright test specs/crm/crm-smoke.spec.ts
+
+# 调试模式
+npx playwright test --debug
+```
+
+#### 7.4 测试模块说明
+
+| 模块 | 目录 | 说明 |
+|------|------|------|
+| CRM 冒烟 | `specs/crm/crm-smoke.spec.ts` | 登录、首页、核心导航 |
+| CRM CRUD | `specs/crm/crm-crud.spec.ts` | 客户增删改查 |
+| 线索管理 | `specs/crm/clue-crud.spec.ts` | 线索操作 |
+| 商机管理 | `specs/crm/business-crud.spec.ts` | 商机操作 |
+| 产品管理 | `specs/crm/product-crud.spec.ts` | 产品操作 |
+| 报价管理 | `specs/crm/quotation-crud.spec.ts` | 报价操作 |
+| 系统管理 | `specs/system/` | 用户、角色、菜单、部门 |
+| 报表 | `specs/report/` | 报表查看 |
+| 目标管理 | `specs/target/` | 目标设置 |
+| 工作台 | `specs/workspace/` | 首页工作台 |
+
+#### 7.5 结果查看
+
+```
+tests/ui/playwright-report/             # Playwright HTML 报告
+docs/test-runs/{batch}/reports/UI自动化测试报告.md    # 正式报告
+docs/test-runs/{batch}/defects/UI缺陷清单.md          # 缺陷清单
+```
+
+### 8. 性能测试
+
+使用 Locust 执行 API 性能测试，支持分阶段加压。详细说明见 [tests/performance/locust/README.md](tests/performance/locust/README.md)。
+
+#### 8.1 环境要求
+
+```bash
+# Windows
+pip install locust locust-plugins PyYAML
+
+# Linux
+pip install locust locust-plugins PyYAML
+# 或使用项目根 requirements.txt
+pip install -r requirements.txt
+```
+
+#### 8.2 运行方式（总控入口）
+
+**Windows (PowerShell)**：
+```powershell
+# 冒烟测试
+pwsh -File scripts/run-perf-tests.ps1 -Mode smoke
+
+# 全量压测
+pwsh -File scripts/run-perf-tests.ps1 -Mode full
+```
+
+**Linux (Bash)**：
+```bash
+# 冒烟测试
+bash scripts/run-perf-tests.sh smoke
+
+# 常规压测
+bash scripts/run-perf-tests.sh regular
+
+# 压力测试（200 用户）
+bash scripts/run-perf-tests.sh stress
+
+# 稳定性测试（30 用户，1 小时）
+bash scripts/run-perf-tests.sh stability
+
+# 极限测试（500 用户）
+bash scripts/run-perf-tests.sh extreme
+
+# 顺序执行全部阶段
+bash scripts/run-perf-tests.sh all
+```
+
+#### 8.3 运行方式（分阶段执行，跨平台通用）
+
+```bash
+cd tests/performance/locust
+
+# 执行某个阶段
+locust -f api/locustfile_smoke.py --headless -u 5 -r 1 -t 60s --host $API_BASE_URL --html=results/smoke_report.html
+locust -f api/locustfile_crm_api.py --headless -u 50 -r 5 -t 300s --host $API_BASE_URL --html=results/regular_report.html
+locust -f api/locustfile_crm_api.py --headless -u 200 -r 10 -t 600s --host $API_BASE_URL --html=results/stress_report.html
+```
+
+> 完整阶段配置见 `tests/performance/locust/config/load_profiles.yaml`。
+
+#### 8.4 结果查看
+
+```
+tests/performance/locust/results/*.html                    # 各阶段 HTML 报告
+tests/performance/locust/results/PERFORMANCE_REPORT_{date}.md  # 综合性能报告
+docs/test-runs/{batch}/reports/性能测试报告.md              # 归档报告
+docs/test-runs/{batch}/raw/performance/                    # 原始结果
+```
+
+### 9. 安全测试
+
+使用自定义安全扫描器执行安全测试。
+
+#### 9.1 运行方式
+
+**Windows (PowerShell)**：
+```powershell
+# 执行安全扫描
+pwsh -File scripts/run-security-tests.ps1 -Target "http://192.168.2.97:6089"
+```
+
+**Linux (Bash)**：
+```bash
+# 执行安全扫描
 bash scripts/run-security-tests.sh
 ```
 
-### 4. 阶段状态检查
+#### 可选参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `-Target` | （空） | 扫描目标地址 |
+| `-ForceNotExecutedReason` | （空） | 强制标记未执行并写明原因 |
+
+#### 9.2 直接执行扫描器（跨平台）
+
+```bash
+cd tests/security/scanner
+python security_scanner.py --target "http://192.168.2.97:6089"
+```
+
+#### 9.3 结果查看
+
+```
+tests/security/reports/                                   # 扫描原始报告
+docs/test-runs/{batch}/reports/安全测试报告.md             # 正式报告
+docs/test-runs/{batch}/defects/安全漏洞清单.md             # 漏洞清单
+```
+
+### 10. 阶段状态检查
 
 机器可读阶段契约在 `stage-manifests/*.yaml`。
 

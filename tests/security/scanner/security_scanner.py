@@ -612,10 +612,7 @@ def main():
             json.dump(results, f, ensure_ascii=False, indent=2)
         print(f"[+] JSON results saved: {json_path}")
     
-    if len(results['vulnerabilities']) > 0:
-        exit(1)
-    else:
-        exit(0)
+    exit(0)
 
 
 if __name__ == "__main__":

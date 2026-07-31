@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "lib\stage-common.ps1")
 
-$stageId = "9-security"
+$stageId = "8-security"
 $stageName = "安全测试"
 $runContext = Get-StageRunContext -StageId $stageId
 $root = $Script:ProjectRoot

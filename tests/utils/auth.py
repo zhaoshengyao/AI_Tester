@@ -1,13 +1,16 @@
 import os
 import base64
 import requests
+from typing import Optional, Any, Dict, Union
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
-def get_env_config(key, default=None):
+
+def get_env_config(key: str, default: Optional[Any] = None) -> Any:
     return os.environ.get(key, default)
 
-def encrypt_password(password, key):
+
+def encrypt_password(password: str, key: str) -> str:
     backend = default_backend()
     cipher = Cipher(algorithms.AES(key.encode('utf-8')), modes.ECB(), backend=backend)
     encryptor = cipher.encryptor()
@@ -18,12 +21,14 @@ def encrypt_password(password, key):
     encrypted = encryptor.update(padded_password.encode('utf-8')) + encryptor.finalize()
     return base64.b64encode(encrypted).decode('utf-8')
 
-def is_encrypted(password):
+
+def is_encrypted(password: Optional[str]) -> bool:
     if not password:
         return False
     return '=' in password and len(password) > 20
 
-def get_encrypted_password():
+
+def get_encrypted_password() -> str:
     password = get_env_config("API_PASSWORD", "")
     test_password = get_env_config("TEST_PASSWORD", "123456")
     client_id = get_env_config("API_CLIENT_ID", "e5cd7e4891bf95d1d19206ce24a7b32e")
@@ -33,7 +38,8 @@ def get_encrypted_password():
     else:
         return encrypt_password(test_password, client_id)
 
-def get_auth_token(client=None):
+
+def get_auth_token(client: Optional[requests.Session] = None) -> str:
     username = get_env_config("API_USERNAME", get_env_config("TEST_USERNAME", "ZhaoShengYao"))
     encrypted_password = get_encrypted_password()
     client_id = get_env_config("API_CLIENT_ID", "e5cd7e4891bf95d1d19206ce24a7b32e")
@@ -54,7 +60,12 @@ def get_auth_token(client=None):
         else:
             response = client.post("/auth/login", json=payload)
         
-        response.raise_for_status()
+        if response.status_code not in [200, 201]:
+            raise requests.exceptions.HTTPError(
+                f"HTTP {response.status_code}: {response.text}",
+                response=response
+            )
+        
         data = response.json()
         
         if data.get("code") == 200 or data.get("code") == 0:
@@ -72,6 +83,12 @@ def get_auth_token(client=None):
         if token:
             return token
         
-        raise Exception(f"Login failed: {data}")
+        raise Exception(f"Login failed: server returned valid status but no token found. Response: {data}")
+    except requests.exceptions.ConnectionError as e:
+        raise Exception(f"Authentication failed: connection error. {str(e)}")
+    except requests.exceptions.Timeout as e:
+        raise Exception(f"Authentication failed: request timed out. {str(e)}")
+    except requests.exceptions.HTTPError as e:
+        raise Exception(f"Authentication failed: HTTP error. {str(e)}")
     except Exception as e:
         raise Exception(f"Authentication failed: {str(e)}")

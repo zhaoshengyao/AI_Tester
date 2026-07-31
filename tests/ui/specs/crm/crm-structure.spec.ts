@@ -41,6 +41,6 @@ test('深度分析CRM页面结构', async ({ page }) => {
   console.log('.el-input:', await page.locator('.el-input').count());
   console.log('.search-form:', await page.locator('.search-form').count());
   
-  await page.screenshot({ path: 'd:\\AICode\\TestHub\\AITestDemo\\tests\\ui\\crm-page-analysis.png' });
+  await page.screenshot({ path: 'crm-page-analysis.png' });
   console.log('\n截图已保存');
 });

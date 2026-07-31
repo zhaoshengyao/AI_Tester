@@ -1,27 +1,231 @@
+# CRM 性能测试负载配置
+# 分阶段执行策略：冒烟 → 常规 → 压力 → 稳定性
+
+# ============ 冒烟测试 ============
 smoke:
-  description: 冒烟压测配置
+  description: 冒烟压测 - 验证系统可用性
   users: 5
   spawn_rate: 1
   run_time: 60s
   target_rps: 10
 
+# ============ 常规压测 ============
 normal:
-  description: 常规压测配置
+  description: 常规压测 - 评估日常负载性能
   users: 50
   spawn_rate: 5
   run_time: 300s
   target_rps: 100
 
+# ============ 压力测试 ============
 stress:
-  description: 压力测试配置
+  description: 压力测试 - 寻找系统瓶颈
   users: 200
   spawn_rate: 10
   run_time: 600s
   target_rps: 500
 
+# ============ 稳定性测试 ============
 soak:
-  description: 稳定性测试配置
+  description: 稳定性测试 - 长时间运行验证
   users: 30
   spawn_rate: 2
   run_time: 3600s
   target_rps: 50
+
+# ============ 业务流程专项 ============
+business_flow_smoke:
+  description: 业务流程冒烟 - 验证赢单/输单流程
+  users: 3
+  spawn_rate: 1
+  run_time: 60s
+  target_rps: 5
+
+business_flow_normal:
+  description: 业务流程常规 - 多用户并发执行业务流程
+  users: 10
+  spawn_rate: 2
+  run_time: 300s
+  target_rps: 20
+
+# ============ 专项测试 ============
+readonly_heavy:
+  description: 只读高压 - 纯查询场景高频访问
+  users: 100
+  spawn_rate: 10
+  run_time: 300s
+  target_rps: 300
+
+write_mixed:
+  description: 读写混合 - 70%读+30%写
+  users: 20
+  spawn_rate: 4
+  run_time: 300s
+  target_rps: 50
+
+# ============ 分阶段执行配置 ============
+# 执行顺序：smoke → normal → stress → soak
+# 每阶段执行完成后评估是否继续下一阶段
+
+staged_execution:
+  description: 分阶段执行策略 - 逐级加压
+  stages:
+    - name: stage1_smoke
+      label: "阶段1: 冒烟测试"
+      script: api/locustfile_smoke.py
+      users: 5
+      spawn_rate: 1
+      run_time: 60s
+      success_criteria:
+        max_error_rate: 0.01        # 错误率 < 1%
+        max_avg_response_time: 500  # 平均响应时间 < 500ms
+        min_rps: 5                 # RPS >= 5
+      pass: true                   # 已通过
+
+    - name: stage2_business_flow
+      label: "阶段2: 业务流程压测"
+      script: api/locustfile_business_flow.py
+      users: 10
+      spawn_rate: 2
+      run_time: 300s
+      success_criteria:
+        max_error_rate: 0.05        # 错误率 < 5%
+        max_avg_response_time: 1000 # 平均响应时间 < 1000ms
+        min_rps: 5                 # RPS >= 5
+      pass: true
+
+    - name: stage3_normal
+      label: "阶段3: 常规压测"
+      script: api/locustfile_crm_api.py
+      users: 50
+      spawn_rate: 5
+      run_time: 300s
+      success_criteria:
+        max_error_rate: 0.01        # 错误率 < 1%
+        max_avg_response_time: 500  # 平均响应时间 < 500ms
+        min_rps: 50                # RPS >= 50
+      pass: true
+
+    - name: stage4_readonly_heavy
+      label: "阶段4: 只读高压"
+      script: api/locustfile_crm_api.py
+      users: 100
+      spawn_rate: 10
+      run_time: 300s
+      success_criteria:
+        max_error_rate: 0.05        # 错误率 < 5%
+        max_avg_response_time: 1000 # 平均响应时间 < 1000ms
+        min_rps: 200               # RPS >= 200
+      pass: true
+
+    - name: stage5_stress
+      label: "阶段5: 压力测试"
+      script: api/locustfile_crm_api.py
+      users: 200
+      spawn_rate: 10
+      run_time: 600s
+      success_criteria:
+        max_error_rate: 0.10        # 错误率 < 10%
+        max_avg_response_time: 3000 # 平均响应时间 < 3000ms
+        min_rps: 300               # RPS >= 300
+      pass: true
+
+    - name: stage6_soak
+      label: "阶段6: 稳定性测试"
+      script: api/locustfile_crm_api.py
+      users: 30
+      spawn_rate: 2
+      run_time: 3600s
+      success_criteria:
+        max_error_rate: 0.01        # 错误率 < 1%
+        max_avg_response_time: 500  # 平均响应时间 < 500ms
+        min_rps: 30                # RPS >= 30
+      pass: false
+
+# ============ 降级策略 ============
+# 当某阶段失败时的处理方式
+fallback_strategy:
+  on_success: continue_next_stage    # 成功：继续下一阶段
+  on_failure: retry_with_lower_load  # 失败：降级重试
+  # on_failure: skip_to_next        # 失败：跳过继续
+  # on_failure: stop_execution      # 失败：停止执行
+  
+  retry_config:
+    max_retries: 2
+    load_reduction_factor: 0.5       # 每次重试负载减半
+
+# ============ 综合报告生成规则 ============
+# 强制规则：稳定性测试（soak/stage6）结束后，必须汇总生成一份综合性能测试报告
+report_generation:
+  # 触发条件：以下任一阶段执行完成后，必须生成综合报告
+  trigger_stages:
+    - stage6_soak                    # 稳定性测试结束后触发（主触发条件）
+  
+  # 综合报告输出配置
+  output:
+    directory: results/              # 输出目录
+    filename_pattern: "PERFORMANCE_REPORT_{date}.md"  # 文件名规则
+    encoding: utf-8
+  
+  # 综合报告必须包含的章节（按顺序）
+  required_sections:
+    - 一、分阶段执行汇总              # 汇总表：所有阶段的核心指标
+    - 二、详细指标分析                # 各阶段的详细指标和通过标准评估
+    - 三、接口响应时间分布            # TOP慢接口、接口稳定性明细
+    - 四、系统性能评估                # 优势、瓶颈、性能结论、系统容量评估
+    - 五、后续建议                    # 优化建议（优先级排序）
+    - 六、测试命令记录                # 可复现的执行命令
+  
+  # 综合报告必须汇总的数据来源
+  data_sources:
+    - 各阶段HTML报告（results/*.html）
+    - 各阶段执行日志（results/staged/*.log）
+    - summary_report.json（分阶段汇总）
+    - 原始Locust输出统计
+  
+  # 综合报告必须给出的核心结论
+  required_conclusions:
+    - 系统安全容量（并发用户数上限）
+    - 性能拐点/退化区间
+    - 系统崩溃点
+    - 稳定性评估（长时间运行是否退化）
+    - 优化建议（按P0/P1/P2优先级排序）
+  
+  # 报告生成时机
+  generation_timing:
+    immediate: true                  # 稳定性测试结束后立即生成
+    update_existing: true            # 若报告已存在则增量更新，不重复创建
+    archive_per_batch: true          # 按测试批次归档到 docs/test-runs/YYYYMMDD-HHMMSS/
+  
+  # 归档规则（综合报告生成后同步执行）
+  archive:
+    enabled: true                    # 启用自动归档
+    # 归档目标：最新批次目录 docs/test-runs/YYYYMMDD-HHMMSS/
+    # 若批次目录不存在则跳过归档并记录警告
+    
+    # 归档文件清单
+    artifacts:
+      comprehensive_report:
+        source: "results/PERFORMANCE_REPORT_{date}.md"
+        target: "docs/test-runs/{batch}/reports/性能测试报告.md"
+        description: "综合性能测试报告（重命名为中文，符合项目规范）"
+      
+      html_reports:
+        source: "results/*.html"
+        target: "docs/test-runs/{batch}/raw/performance/"
+        description: "各阶段原始HTML报告"
+      
+      staged_logs:
+        source: "results/staged/*"
+        target: "docs/test-runs/{batch}/raw/performance/staged/"
+        description: "分阶段执行日志和summary_report.json"
+    
+    # 归档命名规范
+    naming:
+      comprehensive_report: "性能测试报告.md"  # 与 API/UI/安全 报告命名风格一致
+      raw_directory: "raw/performance/"        # 原始结果归档子目录
+    
+    # 归档时机
+    timing:
+      after_report_generation: true  # 综合报告生成后立即归档
+      overwrite_existing: true       # 同批次重复执行时覆盖旧文件

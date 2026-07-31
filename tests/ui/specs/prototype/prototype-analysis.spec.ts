@@ -61,7 +61,7 @@ test('分析新原型页面结构', async ({ page }) => {
   }
   
   console.log('\n=== 页面截图 ===');
-  await page.screenshot({ path: 'd:\\AICode\\TestHub\\AITestDemo\\tests\\ui\\prototype-analysis.png', fullPage: true });
+  await page.screenshot({ path: 'prototype-analysis.png', fullPage: true });
   
   console.log('\n=== 页面HTML (前5000字符) ===');
   const html = await page.content();
@@ -92,7 +92,7 @@ test('检查原型登录页面', async ({ page }) => {
     console.log('✅ 检测到登录相关内容');
   }
   
-  await page.screenshot({ path: 'd:\\AICode\\TestHub\\AITestDemo\\tests\\ui\\prototype-login.png' });
+  await page.screenshot({ path: 'prototype-login.png' });
 });
 
 test('获取原型所有可见文本', async ({ page }) => {

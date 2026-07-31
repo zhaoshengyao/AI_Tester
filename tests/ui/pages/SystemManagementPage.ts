@@ -1,5 +1,5 @@
 import { Page, Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { BasePage, DialogBase } from './BasePage';
 
 export class SystemManagementPage extends BasePage {
   private addButton: Locator;
@@ -12,15 +12,35 @@ export class SystemManagementPage extends BasePage {
   }
 
   async navigate(url: string): Promise<void> {
+    // 如果是系统管理页面，先展开系统管理子菜单
+    if (url.startsWith('/system/')) {
+      await this.expandSystemManagementMenu();
+    }
     await super.navigate(url);
+  }
+
+  async expandSystemManagementMenu(): Promise<void> {
+    // 查找系统管理子菜单
+    const systemSubMenu = this.page.locator('.el-sub-menu').filter({ hasText: '系统管理' }).first();
+    if ((await systemSubMenu.count()) > 0) {
+      // 检查是否已展开
+      const isExpanded = await systemSubMenu.evaluate(el => {
+        const arrow = el.querySelector('.el-sub-menu__icon-arrow');
+        return arrow ? (arrow as HTMLElement).style.transform === 'rotate(180deg)' : false;
+      });
+      
+      if (!isExpanded) {
+        await systemSubMenu.click();
+        console.log('✅ 展开系统管理子菜单');
+        await this.page.waitForTimeout(1000);
+      }
+    }
   }
 
   async closeOpenDialog(): Promise<void> {
     const closeSelectors = [
-      '.el-overlay-dialog .el-dialog__close',
-      '.el-overlay-dialog [aria-label="关闭"]',
       '.el-dialog__close',
-      '.el-overlay-dialog button:has-text("取消")'
+      'button:has-text("取消")'
     ];
 
     for (const selector of closeSelectors) {
@@ -43,15 +63,44 @@ export class SystemManagementPage extends BasePage {
     
     await this.addButton.click();
     console.log('✅ 点击新增按钮');
-    await this.page.waitForTimeout(5000);
     
-    return new SystemAddDialog(this.page);
+    const dialogLocator = await this.waitForDialog();
+    return new SystemAddDialog(this.page, dialogLocator);
   }
 
   async search(keyword: string): Promise<void> {
     if ((await this.searchInput.count()) > 0 && await this.searchInput.isVisible()) {
       await this.searchInput.fill(keyword);
-      await this.searchInput.press('Enter');
+      console.log(`✅ 填写搜索关键词: ${keyword}`);
+      
+      // 在搜索框附近查找搜索按钮
+      const parentForm = this.searchInput.locator('..').locator('..').locator('..');
+      let searchButton = parentForm.locator('button').filter({ hasText: /搜索/ }).first();
+      
+      if ((await searchButton.count()) === 0 || !(await searchButton.isVisible())) {
+        const searchButtons = this.page.locator('button').filter({ hasText: /搜索/ });
+        const buttonCount = await searchButtons.count();
+        
+        for (let i = 0; i < buttonCount; i++) {
+          const btn = searchButtons.nth(i);
+          if (await btn.isVisible()) {
+            const rect = await btn.boundingBox();
+            if (rect && rect.y > 100) {
+              searchButton = btn;
+              break;
+            }
+          }
+        }
+      }
+      
+      if ((await searchButton.count()) > 0 && await searchButton.isVisible()) {
+        await searchButton.click();
+        console.log('✅ 点击搜索按钮');
+      } else {
+        await this.searchInput.press('Enter');
+        console.log('✅ 使用Enter键搜索');
+      }
+      
       await this.page.waitForTimeout(2000);
       console.log(`✅ 搜索: ${keyword}`);
     } else {
@@ -74,67 +123,16 @@ export class SystemManagementPage extends BasePage {
   }
 }
 
-export class SystemAddDialog {
-  private page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
+export class SystemAddDialog extends DialogBase {
+  constructor(page: Page, dialog: Locator) {
+    super(page, dialog);
   }
 
   async fillInputByPlaceholder(placeholder: string, value: string): Promise<void> {
-    const input = this.page.locator(`input[placeholder="${placeholder}"]`).first();
-    if ((await input.count()) > 0 && await input.isVisible()) {
-      await input.fill(value);
-      console.log(`✅ 填写 [${placeholder}]: ${value}`);
-    } else {
-      console.log(`⚠️ 未找到输入框 [${placeholder}]`);
-    }
+    await this.fillByPlaceholder(placeholder, value);
   }
 
   async selectByPlaceholder(placeholder: string, optionText: string): Promise<void> {
-    const select = this.page.locator('.el-select').filter({ hasText: placeholder }).first();
-    if ((await select.count()) > 0 && await select.isVisible()) {
-      await select.click();
-      await this.page.waitForTimeout(300);
-      const options = this.page.locator('.el-select-dropdown__item');
-      const optionCount = await options.count();
-      
-      for (let i = 0; i < optionCount; i++) {
-        const option = options.nth(i);
-        const text = await option.textContent();
-        if (text && text.includes(optionText)) {
-          await option.click({ force: true });
-          console.log(`✅ 选择 [${placeholder}]: ${optionText}`);
-          return;
-        }
-      }
-    } else {
-      console.log(`⚠️ 未找到选择框 [${placeholder}]`);
-    }
-  }
-
-  async submit(): Promise<void> {
-    const submitButton = this.page.locator('.el-overlay-dialog button').filter({ hasText: /确\s*定/ }).first();
-    if ((await submitButton.count()) > 0 && await submitButton.isVisible()) {
-      await submitButton.click();
-      console.log(`✅ 点击确定按钮`);
-      await this.page.waitForTimeout(2000);
-    } else {
-      console.log('⚠️ 未找到确定按钮');
-    }
-  }
-
-  async close(): Promise<void> {
-    const closeBtn = this.page.locator('.el-overlay-dialog .el-dialog__close').first();
-    if ((await closeBtn.count()) > 0 && await closeBtn.isVisible()) {
-      await closeBtn.click();
-      console.log(`✅ 关闭弹窗`);
-    } else {
-      const cancelBtn = this.page.locator('.el-overlay-dialog button').filter({ hasText: /取消/ }).first();
-      if ((await cancelBtn.count()) > 0 && await cancelBtn.isVisible()) {
-        await cancelBtn.click();
-        console.log(`✅ 点击取消关闭弹窗`);
-      }
-    }
+    await this.selectByLabel(placeholder, optionText);
   }
 }

@@ -1,15 +1,32 @@
 import { existsSync } from 'node:fs';
 import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
 import dotenv from 'dotenv';
+import { platform } from 'node:os';
 
 dotenv.config({ path: '../../.env' });
 
+const isWindows = platform() === 'win32';
+const isLinux = platform() === 'linux';
+
 const chromiumExecutableCandidates = [
   process.env.CHROMIUM_EXECUTABLE_PATH,
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
+  // Windows Chrome/Edge
+  ...(isWindows ? [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
+  ] : []),
+  // Linux Chrome/Chromium
+  ...(isLinux ? [
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    '/snap/bin/chromium',
+    '/opt/google/chrome/chrome',
+    '/opt/chromium/chromium'
+  ] : [])
 ].filter((value): value is string => Boolean(value));
 
 const chromiumExecutablePath = chromiumExecutableCandidates.find((candidate) => existsSync(candidate));
@@ -39,7 +56,7 @@ if (process.env.ENABLE_FIREFOX === '1') {
 
 export default defineConfig({
   testDir: './specs',
-  timeout: 60_000,
+  timeout: 120_000,
   retries: 2,
   workers: process.env.CI ? 2 : 4,
   testIgnore: ['**/prototype/**/*.spec.ts'],

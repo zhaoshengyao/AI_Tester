@@ -7,8 +7,8 @@ class CRMUIUser(PlaywrightUser):
     """CRM UI 冒烟压测用户"""
 
     host = os.getenv("BASE_URL", get_env_config("BASE_URL", "http://192.168.2.97:6089"))
-    username = os.getenv("TEST_USERNAME", get_env_config("TEST_USERNAME", "admin"))
-    password = os.getenv("TEST_PASSWORD", get_env_config("TEST_PASSWORD", "admin123"))
+    username = os.getenv("TEST_USERNAME", get_env_config("TEST_USERNAME", "ZhaoShengYao"))
+    password = os.getenv("TEST_PASSWORD", get_env_config("TEST_PASSWORD", "123456"))
     wait_time = between(2, 5)
 
     @task(5)

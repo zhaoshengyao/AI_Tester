@@ -22,7 +22,7 @@ export class TestDataManager {
   private dataDir: string;
   private createdData: TestDataRecord[] = [];
 
-  constructor(apiBaseUrl?: string, authToken?: string) {
+  constructor(apiBaseUrl?: string | null, authToken?: string | null) {
     this.apiBaseUrl = apiBaseUrl || process.env.API_BASE_URL || 'http://192.168.2.97:6089/prod-api';
     this.authToken = authToken || '';
     this.headers = this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
@@ -75,8 +75,8 @@ export class TestDataManager {
         name: `Clue_${uniqueId}`,
         phone: `13900${timestamp.slice(-8)}`,
         company: `Company_${uniqueId}`,
-        source: '线上',
-        status: '待领取'
+        source: '搜索引擎',
+        status: '待跟进'
       },
       product: {
         productName: `test_product_${uniqueId}`,
@@ -338,6 +338,89 @@ export class TestDataManager {
     }
     return 0;
   }
+}
+
+// 获取系统中真实存在的客户列表
+export async function getExistingCustomers(apiBaseUrl?: string, authToken?: string): Promise<Array<{ id: number; customerName: string }>> {
+  const manager = new TestDataManager(apiBaseUrl, authToken);
+  try {
+    // 构造请求头，尝试多种认证方式
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+      headers['token'] = authToken;
+    }
+
+    const url = `${manager.apiBaseUrl}/crm/customer/page?pageNum=1&pageSize=50`;
+    console.log(`🔍 获取客户列表: ${url}`);
+    console.log(`🔑 请求头: Authorization=${authToken ? 'Bearer ' + authToken.substring(0, 20) + '...' : '无'}`);
+    
+    const response = await fetch(url, { headers });
+    console.log(`📥 响应状态: ${response.status}`);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`📊 响应数据: ${JSON.stringify(data).substring(0, 200)}`);
+      
+      // 尝试多种数据结构
+      const items = data.data?.rows || data.data?.list || data.rows || data.list || [];
+      console.log(`📋 客户列表数量: ${items.length}`);
+      
+      return items.map((item: any) => ({
+        id: item.id,
+        customerName: item.customerName || item.name || item.customer_name || ''
+      })).filter((c: any) => c.customerName);
+    }
+  } catch (error) {
+    console.log(`获取客户列表失败: ${error}`);
+  }
+  return [];
+}
+
+// 获取系统中真实存在的负责人列表
+export async function getExistingOwners(apiBaseUrl?: string, authToken?: string): Promise<Array<{ id: number; name: string }>> {
+  const manager = new TestDataManager(apiBaseUrl, authToken);
+  try {
+    const response = await fetch(`${manager.apiBaseUrl}/system/user/simple-list`, {
+      headers: manager.headers
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const items = data.data || data.rows || [];
+      return items.map((item: any) => ({
+        id: item.id,
+        name: item.nickName || item.username || item.name || ''
+      })).filter((u: any) => u.name);
+    }
+  } catch (error) {
+    console.log(`获取负责人列表失败: ${error}`);
+  }
+  return [];
+}
+
+// 获取系统中真实存在的产品列表
+export async function getExistingProducts(apiBaseUrl?: string, authToken?: string): Promise<Array<{ id: number; productName: string }>> {
+  const manager = new TestDataManager(apiBaseUrl, authToken);
+  try {
+    const response = await fetch(`${manager.apiBaseUrl}/product/page?pageNum=1&pageSize=50`, {
+      headers: manager.headers
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const items = data.data?.rows || data.rows || [];
+      return items.map((item: any) => ({
+        id: item.id,
+        productName: item.productName || item.name || ''
+      })).filter((p: any) => p.productName);
+    }
+  } catch (error) {
+    console.log(`获取产品列表失败: ${error}`);
+  }
+  return [];
 }
 
 export function getTestDataManager(apiBaseUrl?: string, authToken?: string): TestDataManager {

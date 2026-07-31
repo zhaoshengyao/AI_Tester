@@ -10,8 +10,8 @@ class BaseClient:
         self.base_url = os.getenv('API_BASE_URL', 'http://192.168.2.97:6089/prod-api')
         self.session = requests.Session()
         self.timeout = int(os.getenv('API_TIMEOUT_SECONDS', 10))
-        self.api_username = os.getenv('API_USERNAME', 'zsy')
-        self.api_password = os.getenv('API_PASSWORD', '17uV/kDYwCJ3/zyUt59BHw==')
+        self.api_username = os.getenv('API_USERNAME', 'ZhaoShengYao')
+        self.api_password = os.getenv('API_PASSWORD', 'V+GwtuX+DsY4rxGNZ9hZSg==')
         self.api_client_id = os.getenv('API_CLIENT_ID', 'e5cd7e4891bf95d1d19206ce24a7b32e')
         self._auth_token = None
 

@@ -25,6 +25,7 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .coverage
+.venv/
 
 # 编辑器配置
 .vscode/

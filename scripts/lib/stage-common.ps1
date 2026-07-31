@@ -1,4 +1,4 @@
-﻿$Script:ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+﻿﻿﻿﻿$Script:ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $Script:StageContractScript = Join-Path $Script:ProjectRoot "scripts\stage_contract.py"
 
 function New-OutputState {
@@ -29,6 +29,7 @@ function Get-LatestRunId {
     }
 
     $latestDir = Get-ChildItem -LiteralPath $TestRunsDir -Directory | 
+                 Where-Object { $_.Name -match '^\d{8}-\d{6}$' } |
                  Sort-Object Name -Descending | 
                  Select-Object -First 1
 

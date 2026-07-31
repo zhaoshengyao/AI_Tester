@@ -10,7 +10,7 @@ export class LoginPage {
   }
 
   async login(username: string, password: string) {
-    const usernameInput = this.page.locator('input[type="text"]').filter({ not: { hasClass: 'el-select__input' } }).first();
+    const usernameInput = this.page.locator('input[type="text"]:not(.el-select__input)').first();
     const passwordInput = this.page.locator('input[type="password"]').first();
     const loginButton = this.page.getByRole('button', { name: /登\s*录/ }).first();
     
@@ -37,7 +37,7 @@ export class LoginPage {
       });
     });
 
-    const usernameInput = this.page.locator('input[type="text"]').filter({ not: { hasClass: 'el-select__input' } }).first();
+    const usernameInput = this.page.locator('input[type="text"]:not(.el-select__input)').first();
     const passwordInput = this.page.locator('input[type="password"]').first();
     const loginButton = this.page.getByRole('button', { name: /登\s*录/ }).first();
     

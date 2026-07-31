@@ -1,0 +1,374 @@
+=== 深度分析新建商机弹窗结构 ===
+
+--- 页面初始状态 ---
+el-dialog 数量: 0
+el-modal 数量: 0
+el-overlay 数量: 4
+el-drawer 数量: 1
+可见 overlay: 0
+
+--- 点击"新建商机"按钮 ---
+
+可见 el-dialog: 1
+
+  弹窗 1:
+    类名: el-dialog
+    样式: display=block, visibility=visible, opacity=1
+    内容预览: <header class="el-dialog__header show-close"><span role="heading" aria-level="2" class="el-dialog__title">添加商机</span><button aria-label="关闭此对话框" class="el-dialog__headerbtn" type="button"><i class="el-icon el-dialog__close"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M764.288 214.592 512 466.88 259.712 214.592a31.936 31.936 0 0 0-45.12 45.12L466.752 512 214.528 764.224a31.936 31.936 0 1 0 45.12 45.184L512 557.184l252.288 252.288a31.936 31.936 0 0 
+
+可见 el-modal: 0
+
+可见 el-drawer: 1
+
+  Drawer 1:
+    类名: el-drawer rtl
+    内容预览: <span class="el-drawer__sr-focus" tabindex="-1"></span><!--v-if--><!--v-if--><!--v-if--><!--v-if-->
+
+可见 el-overlay-dialog: 3
+
+  Overlay 1:
+    类名: el-overlay-dialog
+    包含 el-dialog: false
+    包含 el-modal: false
+    子元素数量: 0
+    内容预览: 
+
+  Overlay 2:
+    类名: el-overlay-dialog
+    包含 el-dialog: false
+    包含 el-modal: false
+    子元素数量: 0
+    内容预览: 
+
+  Overlay 3:
+    类名: el-overlay-dialog
+    包含 el-dialog: true
+    包含 el-modal: false
+    子元素数量: 1
+    内容预览: <div class="el-dialog" tabindex="-1" style="--el-dialog-width: 70%;"><header class="el-dialog__header show-close"><span role="heading" aria-level="2" class="el-dialog__title">添加商机</span><button aria-label="关闭此对话框" class="el-dialog__headerbtn" type="button"><i class="el-icon el-dialog__close"><svg xm
+
+
+--- 可见输入框 (共12个) ---
+
+  1. INPUT[type="text"]
+     placeholder: ""
+     class: el-select__input is-small
+     id: el-id-8113-21
+     parentClass: el-select__selected-item el-select__input-wrapper is-hidden
+     grandParentClass: el-select__selection
+     readOnly: true
+
+  2. INPUT[type="text"]
+     placeholder: "搜索客户/线索/商机..."
+     class: el-input__inner
+     id: el-id-8113-22
+     parentClass: el-input__wrapper
+     grandParentClass: el-input el-input--small el-input-group el-input--suffix search-keyword-input el-input-group--append
+     readOnly: false
+
+  3. INPUT[type="text"]
+     placeholder: "请输入商机名称"
+     class: el-input__inner
+     id: el-id-8113-112
+     parentClass: el-input__wrapper
+     grandParentClass: el-input el-input--default
+     readOnly: false
+
+  4. INPUT[type="text"]
+     placeholder: ""
+     class: el-select__input is-default
+     id: el-id-8113-113
+     parentClass: el-select__selected-item el-select__input-wrapper
+     grandParentClass: el-select__selection
+     readOnly: false
+
+  5. INPUT[type="text"]
+     placeholder: ""
+     class: el-select__input is-default
+     id: el-id-8113-114
+     parentClass: el-select__selected-item el-select__input-wrapper
+     grandParentClass: el-select__selection
+     readOnly: false
+
+  6. INPUT[type="text"]
+     placeholder: "请选择日期"
+     class: el-input__inner
+     id: el-id-8113-115
+     parentClass: el-input__wrapper
+     grandParentClass: el-input el-input--default el-input--prefix el-input--suffix el-date-editor el-date-editor--date el-tooltip__trigger el-tooltip__trigger
+     readOnly: false
+
+  7. INPUT[type="number"]
+     placeholder: ""
+     class: el-input__inner
+     id: el-id-8113-116
+     parentClass: el-input__wrapper
+     grandParentClass: el-input el-input--default el-input--suffix
+     readOnly: false
+
+  8. INPUT[type="text"]
+     placeholder: ""
+     class: el-select__input is-default
+     id: el-id-8113-117
+     parentClass: el-select__selected-item el-select__input-wrapper is-hidden
+     grandParentClass: el-select__selection
+     readOnly: true
+
+  9. INPUT[type="text"]
+     placeholder: ""
+     class: el-select__input is-default
+     id: el-id-8113-118
+     parentClass: el-select__selected-item el-select__input-wrapper is-hidden
+     grandParentClass: el-select__selection
+     readOnly: true
+
+  10. INPUT[type="text"]
+     placeholder: "请输入竞争对手"
+     class: el-input__inner
+     id: el-id-8113-119
+     parentClass: el-input__wrapper
+     grandParentClass: el-input el-input--default
+     readOnly: false
+
+  11. INPUT[type="text"]
+     placeholder: "请输入下一行动"
+     class: el-input__inner
+     id: el-id-8113-120
+     parentClass: el-input__wrapper
+     grandParentClass: el-input el-input--default
+     readOnly: false
+
+  12. TEXTAREA[type="textarea"]
+     placeholder: "请输入备注"
+     class: el-textarea__inner
+     id: el-id-8113-121
+     parentClass: el-textarea el-input--default
+     grandParentClass: el-form-item__content
+     readOnly: false
+
+
+--- 可见按钮 (共8个) ---
+  1. "搜索"
+     class: el-button el-button--primary el-button--small
+     type: button
+     disabled: false
+     parentClass: el-input-group__append
+  2. "新建线索"
+     class: el-button el-button--small is-plain
+     type: button
+     disabled: false
+     parentClass: quick-actions
+  3. "新增跟进"
+     class: el-button el-button--small is-plain
+     type: button
+     disabled: false
+     parentClass: quick-actions
+  4. "添加客户"
+     class: el-button el-button--small is-plain
+     type: button
+     disabled: false
+     parentClass: quick-actions
+  5. "新建商机"
+     class: el-button el-button--small is-plain
+     type: button
+     disabled: false
+     parentClass: quick-actions
+  6. "创建报价"
+     class: el-button el-button--small is-plain
+     type: button
+     disabled: false
+     parentClass: quick-actions
+  7. "确 定"
+     class: el-button el-button--primary el-button--default
+     type: button
+     disabled: false
+     parentClass: dialog-footer
+  8. "取 消"
+     class: el-button el-button--default
+     type: button
+     disabled: false
+     parentClass: dialog-footer
+
+
+--- el-select 组件 (共5个) ---
+  1. class: el-select el-select--small search-type-select
+     hasInput: true
+     inputPlaceholder: ""
+     parentClass: search-input-wrapper
+  2. class: el-select el-select--default
+     hasInput: true
+     inputPlaceholder: ""
+     parentClass: el-form-item__content
+  3. class: el-select el-select--default
+     hasInput: true
+     inputPlaceholder: ""
+     parentClass: el-form-item__content
+  4. class: el-select el-select--default
+     hasInput: true
+     inputPlaceholder: ""
+     parentClass: el-form-item__content
+  5. class: el-select el-select--default
+     hasInput: true
+     inputPlaceholder: ""
+     parentClass: el-form-item__content
+
+
+--- 可见Overlay的DOM结构 ---
+
+===== Overlay 1 =====
+类名: el-overlay el-modal-dialog
+结构:
+<div class="el-overlay-dialog"> 添加商机基本信息商机名称0 / 100负
+  <div class="el-dialog"> 添加商机基本信息商机名称0 / 100负
+    <header class="el-dialog__header show-close"> 添加商机
+      <span class="el-dialog__title"> 添加商机
+      <button class="el-dialog__headerbtn">
+        <i class="el-icon el-dialog__close">
+          <svg class="">
+            <path class="">
+            <div class="el-dialog__body"> 基本信息商机名称0 / 100负责人请选
+              <form class="el-form el-form--default el-form--label-right"> 基本信息商机名称0 / 100负责人请选
+                <h3 class=""> 基本信息
+                <div class="el-row"> 商机名称0 / 100负责人请选择负责人
+                <div class="el-col el-col-12"> 商机名称0 / 100
+                  <div class="el-form-item el-form-item--default is-required asterisk-left el-form-item--label-right"> 商机名称0 / 100
+                    <label class="el-form-item__label"> 商机名称
+                    <div class="el-form-item__content"> 0 / 100
+                      <div class="el-input el-input--default"> 0 / 100
+                        <div class="el-input__wrapper"> 0 / 100
+                          <input class="el-input__inner">
+                            <span class="el-input__suffix"> 0 / 100
+                              <span class="el-input__suffix-inner"> 0 / 100
+                                <span class="el-input__count"> 0 / 100
+                                  <span class="el-input__count-inner"> 0 / 100
+                                  <div class="el-col el-col-12"> 负责人请选择负责人
+                                    <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 负责人请选择负责人
+                                      <label class="el-form-item__label"> 负责人
+                                      <div class="el-form-item__content"> 请选择负责人
+                                        <div class="el-select el-select--default"> 请选择负责人
+                                          <div class="el-select__wrapper is-filterable el-tooltip__trigger"> 请选择负责人
+                                            <div class="el-select__selection"> 请选择负责人
+                                              <div class="el-select__selected-item el-select__input-wrapper">
+                                                <input class="el-select__input is-default">
+                                                  <span class="el-select__input-calculator">
+                                                  <div class="el-select__selected-item el-select__placeholder is-transparent"> 请选择负责人
+                                                    <span class=""> 请选择负责人
+                                                    <div class="el-select__suffix">
+                                                    <div class="el-col el-col-12"> 客户名称请选择客户
+                                                      <div class="el-form-item el-form-item--default is-required asterisk-left el-form-item--label-right"> 客户名称请选择客户
+                                                        <label class="el-form-item__label"> 客户名称
+                                                        <div class="el-form-item__content"> 请选择客户
+                                                          <div class="el-select el-select--default"> 请选择客户
+                                                            <div class="el-select__wrapper is-filterable el-tooltip__trigger"> 请选择客户
+                                                              <div class="el-select__selection"> 请选择客户
+                                                                <div class="el-select__selected-item el-select__input-wrapper">
+                                                                  <input class="el-select__input is-default">
+                                                                    <span class="el-select__input-calculator">
+                                                                    <div class="el-select__selected-item el-select__placeholder is-transparent"> 请选择客户
+                                                                      <span class=""> 请选择客户
+                                                                      <div class="el-select__suffix">
+                                                                        <i class="el-icon el-select__caret el-select__icon">
+                                                                          <svg class="">
+                                                                            <path class="">
+                                                                            <div class="el-col el-col-12"> 预结日期
+                                                                              <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 预结日期
+                                                                                <label class="el-form-item__label"> 预结日期
+                                                                                <div class="el-form-item__content">
+                                                                                  <div class="el-input el-input--default el-input--prefix el-input--suffix el-date-editor">
+                                                                                    <div class="el-input__wrapper">
+                                                                                      <span class="el-input__prefix">
+                                                                                        <span class="el-input__prefix-inner">
+                                                                                          <i class="el-icon el-input__icon">
+                                                                                            <svg class="">
+                                                                                              <path class="">
+                                                                                              <input class="el-input__inner">
+                                                                                                <span class="el-input__suffix">
+                                                                                                  <span class="el-input__suffix-inner">
+                                                                                                  <div class="el-col el-col-12"> 赢率%
+                                                                                                    <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 赢率%
+                                                                                                      <label class="el-form-item__label"> 赢率
+                                                                                                      <div class="el-form-item__content"> %
+                                                                                                        <div class="el-input-number el-input-number--default is-center"> %
+                                                                                                          <span class="el-input-number__decrease">
+                                                                                                            <i class="el-icon">
+                                                                                                              <svg class="">
+                                                                                                                <path class="">
+                                                                                                                <span class="el-input-number__increase">
+                                                                                                                  <i class="el-icon">
+                                                                                                                    <svg class="">
+                                                                                                                      <path class="">
+                                                                                                                      <div class="el-input el-input--default el-input--suffix"> %
+                                                                                                                        <div class="el-input__wrapper"> %
+                                                                                                                          <input class="el-input__inner">
+                                                                                                                            <span class="el-input__suffix"> %
+                                                                                                                              <span class="el-input__suffix-inner"> %
+                                                                                                                                <span class=""> %
+                                                                                                                                <div class="el-col el-col-12"> 销售流程请选择销售流程
+                                                                                                                                  <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 销售流程请选择销售流程
+                                                                                                                                    <label class="el-form-item__label"> 销售流程
+                                                                                                                                    <div class="el-form-item__content"> 请选择销售流程
+                                                                                                                                      <div class="el-select el-select--default"> 请选择销售流程
+                                                                                                                                        <div class="el-select__wrapper el-tooltip__trigger"> 请选择销售流程
+                                                                                                                                          <div class="el-select__selection"> 请选择销售流程
+                                                                                                                                            <div class="el-select__selected-item el-select__input-wrapper is-hidden">
+                                                                                                                                              <input class="el-select__input is-default">
+                                                                                                                                                <div class="el-select__selected-item el-select__placeholder is-transparent"> 请选择销售流程
+                                                                                                                                                  <span class=""> 请选择销售流程
+                                                                                                                                                  <div class="el-select__suffix">
+                                                                                                                                                    <i class="el-icon el-select__caret el-select__icon">
+                                                                                                                                                      <svg class="">
+                                                                                                                                                        <path class="">
+                                                                                                                                                        <div class="el-col el-col-12"> 商机阶段请选择商机阶段
+                                                                                                                                                          <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 商机阶段请选择商机阶段
+                                                                                                                                                            <label class="el-form-item__label"> 商机阶段
+                                                                                                                                                            <div class="el-form-item__content"> 请选择商机阶段
+                                                                                                                                                              <div class="el-select el-select--default"> 请选择商机阶段
+                                                                                                                                                                <div class="el-select__wrapper el-tooltip__trigger"> 请选择商机阶段
+                                                                                                                                                                  <div class="el-select__selection"> 请选择商机阶段
+                                                                                                                                                                    <div class="el-select__selected-item el-select__input-wrapper is-hidden">
+                                                                                                                                                                      <input class="el-select__input is-default">
+                                                                                                                                                                        <div class="el-select__selected-item el-select__placeholder is-transparent"> 请选择商机阶段
+                                                                                                                                                                          <span class=""> 请选择商机阶段
+                                                                                                                                                                          <div class="el-select__suffix">
+                                                                                                                                                                            <i class="el-icon el-select__caret el-select__icon">
+                                                                                                                                                                              <svg class="">
+                                                                                                                                                                                <path class="">
+                                                                                                                                                                                <div class="el-col el-col-12"> 竞争对手0 / 60
+                                                                                                                                                                                  <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 竞争对手0 / 60
+                                                                                                                                                                                    <label class="el-form-item__label"> 竞争对手
+                                                                                                                                                                                    <div class="el-form-item__content"> 0 / 60
+                                                                                                                                                                                      <div class="el-input el-input--default"> 0 / 60
+                                                                                                                                                                                        <div class="el-input__wrapper"> 0 / 60
+                                                                                                                                                                                          <input class="el-input__inner">
+                                                                                                                                                                                            <span class="el-input__suffix"> 0 / 60
+                                                                                                                                                                                              <span class="el-input__suffix-inner"> 0 / 60
+                                                                                                                                                                                                <span class="el-input__count"> 0 / 60
+                                                                                                                                                                                                  <span class="el-input__count-inner"> 0 / 60
+                                                                                                                                                                                                  <div class="el-col el-col-12"> 下一行动0 / 100
+                                                                                                                                                                                                    <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 下一行动0 / 100
+                                                                                                                                                                                                      <label class="el-form-item__label"> 下一行动
+                                                                                                                                                                                                      <div class="el-form-item__content"> 0 / 100
+                                                                                                                                                                                                        <div class="el-input el-input--default"> 0 / 100
+                                                                                                                                                                                                          <div class="el-input__wrapper"> 0 / 100
+                                                                                                                                                                                                            <input class="el-input__inner">
+                                                                                                                                                                                                              <span class="el-input__suffix"> 0 / 100
+                                                                                                                                                                                                                <span class="el-input__suffix-inner"> 0 / 100
+                                                                                                                                                                                                                  <span class="el-input__count"> 0 / 100
+                                                                                                                                                                                                                    <span class="el-input__count-inner"> 0 / 100
+                                                                                                                                                                                                                    <div class="el-col el-col-24"> 备注0 / 500
+                                                                                                                                                                                                                      <div class="el-form-item el-form-item--default asterisk-left el-form-item--label-right"> 备注0 / 500
+                                                                                                                                                                                                                        <label class="el-form-item__label"> 备注
+                                                                                                                                                                                                                        <div class="el-form-item__content"> 0 / 500
+                                                                                                                                                                                                                          <div class="el-textarea el-input--default"> 0 / 500
+                                                                                                                                                                                                                            <textarea class="el-textarea__inner">
+                                                                                                                                                                                                                            <span class="el-input__count"> 0 / 500
+                                                                                                                                                                                                                            <footer class="el-dialog__footer"> 确 定取 消
+                                                                                                                                                                                                                              <div class="dialog-footer"> 确 定取 消
+                                                                                                                                                                                                                                <button class="el-button el-button--primary el-button--default"> 确 定
+                                                                                                                                                                                                                                  <span class=""> 确 定
+                                                                                                                                                                                                                                  <button class="el-button el-button--default"> 取 消
+                                                                                                                                                                                                                                    <span class=""> 取 消
+
+
+
+=== 分析完成 ===
