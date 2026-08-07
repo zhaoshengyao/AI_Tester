@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from dataclasses import dataclass
 from datetime import datetime
@@ -94,6 +95,11 @@ def resolve_run_id(run_id: str | None) -> str | None:
     if run_id:
         return run_id
 
+    # 优先读 TEST_RUN_ID 环境变量（多系统并行隔离的关键）
+    env_run_id = os.environ.get("TEST_RUN_ID")
+    if env_run_id:
+        return env_run_id
+
     runs_dir = ROOT / "docs" / "test-runs"
     if not runs_dir.exists():
         return None
@@ -102,8 +108,11 @@ def resolve_run_id(run_id: str | None) -> str | None:
     return latest[0] if latest else None
 
 
-def resolve_path(raw_path: str, run_id: str | None) -> Path:
-    return ROOT / raw_path.replace("{run_id}", run_id or "")
+def resolve_path(raw_path: str, run_id: str | None, system_id: str | None = None) -> Path:
+    result = raw_path.replace("{run_id}", run_id or "")
+    if system_id:
+        result = result.replace("{system}", system_id)
+    return ROOT / result
 
 
 def check_single_path(path: Path, expected_kind: str) -> PathCheck:
@@ -126,9 +135,9 @@ def check_single_path(path: Path, expected_kind: str) -> PathCheck:
     )
 
 
-def evaluate_requirement(requirement: dict[str, Any], run_id: str | None) -> dict[str, Any]:
+def evaluate_requirement(requirement: dict[str, Any], run_id: str | None, system_id: str | None = None) -> dict[str, Any]:
     path_checks = [
-        check_single_path(resolve_path(raw_path, run_id), requirement["path_type"])
+        check_single_path(resolve_path(raw_path, run_id, system_id), requirement["path_type"])
         for raw_path in requirement.get("paths", [])
     ]
 
@@ -171,7 +180,7 @@ def check_reference_to_run(output_state: dict[str, Any], run_id: str | None) -> 
     return False, ""
 
 
-def evaluate_gate(gate: dict[str, Any], run_id: str | None) -> dict[str, Any]:
+def evaluate_gate(gate: dict[str, Any], run_id: str | None, system_id: str | None = None) -> dict[str, Any]:
     gate_type = gate["gate_type"]
     if gate_type == "external":
         return {
@@ -188,7 +197,7 @@ def evaluate_gate(gate: dict[str, Any], run_id: str | None) -> dict[str, Any]:
         "match": gate.get("match", "all"),
         "path_type": "dir" if gate_type == "dir_exists" else "file",
     }
-    result = evaluate_requirement(requirement, run_id)
+    result = evaluate_requirement(requirement, run_id, system_id)
     return {
         "name": gate["name"],
         "gate_type": gate_type,
@@ -274,15 +283,27 @@ def build_status_payload(
     }
 
 
-def write_stage_status(run_id: str | None, payload: dict[str, Any]) -> str | None:
+def write_stage_status(run_id: str | None, payload: dict[str, Any], system_id: str | None = None) -> str | None:
     if not run_id:
         return None
 
-    status_dir = ROOT / "docs" / "test-runs" / run_id / "stage-status"
+    # 优先读 TEST_RUN_DIR 环境变量（多系统隔离），否则用默认 docs/test-runs/<run_id>
+    run_dir_env = os.environ.get("TEST_RUN_DIR")
+    if run_dir_env:
+        run_dir = Path(run_dir_env)
+        if not run_dir.is_absolute():
+            run_dir = ROOT / run_dir
+    else:
+        run_dir = ROOT / "docs" / "test-runs" / run_id
+
+    status_dir = run_dir / "stage-status"
     status_dir.mkdir(parents=True, exist_ok=True)
     status_path = status_dir / f"{payload['stage_id']}.json"
     status_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return str(status_path.relative_to(ROOT))
+    try:
+        return str(status_path.relative_to(ROOT))
+    except ValueError:
+        return str(status_path)
 
 
 def handle_check_stage(args: argparse.Namespace) -> int:
@@ -299,14 +320,15 @@ def handle_check_stage(args: argparse.Namespace) -> int:
         print(json.dumps({"errors": validation_errors}, ensure_ascii=False, indent=2))
         return EXIT_INVALID
 
+    system_id = getattr(args, "system", None) or os.environ.get("TEST_SYSTEM_ID")
     run_id = resolve_run_id(args.run_id)
-    inputs_checked = [evaluate_requirement(item, run_id) for item in manifest.get("required_inputs", [])]
-    gates_checked = [evaluate_gate(item, run_id) for item in manifest.get("required_gates", [])]
+    inputs_checked = [evaluate_requirement(item, run_id, system_id) for item in manifest.get("required_inputs", [])]
+    gates_checked = [evaluate_gate(item, run_id, system_id) for item in manifest.get("required_gates", [])]
     outputs_checked = []
     stale_reasons: list[str] = []
 
     if args.mode == "full":
-        outputs_checked = [evaluate_requirement(item, run_id) for item in manifest.get("required_outputs", [])]
+        outputs_checked = [evaluate_requirement(item, run_id, system_id) for item in manifest.get("required_outputs", [])]
         for output_state in outputs_checked:
             stale, stale_reason = check_reference_to_run(output_state, run_id)
             if stale:
@@ -326,7 +348,7 @@ def handle_check_stage(args: argparse.Namespace) -> int:
     )
 
     if args.write_status:
-        status_path = write_stage_status(run_id, payload)
+        status_path = write_stage_status(run_id, payload, system_id)
         if status_path:
             payload["status_file"] = status_path
 
@@ -363,6 +385,7 @@ def build_parser() -> argparse.ArgumentParser:
     check_parser = subparsers.add_parser("check-stage", help="Check one stage against unified manifests")
     check_parser.add_argument("--stage-id", required=True)
     check_parser.add_argument("--run-id")
+    check_parser.add_argument("--system", help="System ID (e.g. crm). Falls back to TEST_SYSTEM_ID env var.")
     check_parser.add_argument("--mode", choices=["preflight", "full"], default="full")
     check_parser.add_argument("--write-status", action="store_true")
     check_parser.add_argument("--output", help="Output JSON to file instead of stdout")

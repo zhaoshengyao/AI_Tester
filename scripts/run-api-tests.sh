@@ -13,6 +13,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:-full}"
 KEYWORD="${2:-}"
 
+# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
+SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+
 # ---------- 颜色输出 ----------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,8 +29,13 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
 
 # ---------- 目录与文件 ----------
+# 优先用 TEST_RUN_DIR（由 run-full-test-flow.sh 注入），实现批次隔离与并行安全
 TEST_DIR="$ROOT/tests/api"
-REPORT_DIR="$TEST_DIR/reports"
+if [ -n "${TEST_RUN_DIR:-}" ]; then
+    REPORT_DIR="$TEST_RUN_DIR/raw/api"
+else
+    REPORT_DIR="$TEST_DIR/reports"
+fi
 RAW_DIR="$REPORT_DIR/raw"
 JUNIT_DIR="$REPORT_DIR/junit"
 HTML_DIR="$REPORT_DIR/html"
@@ -157,7 +165,12 @@ else
 fi
 
 # ---------- 生成 Markdown 报告 ----------
-BATCH_DIR=$(ls -dt "$ROOT/docs/test-runs"/*/ 2>/dev/null | head -1)
+# 优先用 TEST_RUN_DIR（由 run-full-test-flow.sh 注入），避免并行时 ls -dt 找到错误批次
+if [ -n "${TEST_RUN_DIR:-}" ]; then
+    BATCH_DIR="$TEST_RUN_DIR"
+else
+    BATCH_DIR=$(ls -dt "$ROOT/docs/test-runs"/*/ 2>/dev/null | head -1)
+fi
 if [ -n "$BATCH_DIR" ]; then
     mkdir -p "$BATCH_DIR/reports" "$BATCH_DIR/defects"
     REPORT_MD="$BATCH_DIR/reports/接口自动化测试报告.md"

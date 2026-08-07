@@ -10,6 +10,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SEC_DIR="$ROOT/tests/security"
 
+# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
+SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+
 # ---------- 颜色输出 ----------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -58,7 +61,12 @@ log_info ""
 
 cd "$SEC_DIR"
 
-REPORT_DIR="$SEC_DIR/reports"
+# 输出目录隔离：优先用 TEST_RUN_DIR（批次隔离），否则用本地 reports/
+if [ -n "${TEST_RUN_DIR:-}" ]; then
+    REPORT_DIR="$TEST_RUN_DIR/raw/security"
+else
+    REPORT_DIR="$SEC_DIR/reports"
+fi
 mkdir -p "$REPORT_DIR"
 
 REPORT_FILE="$REPORT_DIR/security-report-$(date +%Y%m%d-%H%M%S).md"

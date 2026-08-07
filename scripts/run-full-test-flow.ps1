@@ -1,4 +1,4 @@
-﻿param(
+param(
 
 
 
@@ -19,6 +19,10 @@
 
 
     [string]$RunId = "",
+
+
+
+    [string]$System = "",
 
 
 
@@ -54,15 +58,30 @@
 
 
 
+# 系统标识：优先参数，其次环境变量，默认 crm
+if (-not $System) {
+    $System = if ($env:TEST_SYSTEM_ID) { $env:TEST_SYSTEM_ID } else { "crm" }
+}
+$env:TEST_SYSTEM_ID = $System
+
+
+
+# 多系统：优先加载 projects/<system>/.env，不存在则回退根 .env
+$systemEnvFile = Join-Path $PSScriptRoot "..\projects\$System\.env"
 $envFile = Join-Path $PSScriptRoot "..\.env"
+$envToLoad = $null
+
+if (Test-Path -LiteralPath $systemEnvFile) {
+    $envToLoad = $systemEnvFile
+} elseif (Test-Path -LiteralPath $envFile) {
+    $envToLoad = $envFile
+}
+
+if ($envToLoad) {
 
 
 
-if (Test-Path -LiteralPath $envFile) {
-
-
-
-    Get-Content -LiteralPath $envFile -Encoding utf8 | ForEach-Object {
+    Get-Content -LiteralPath $envToLoad -Encoding utf8 | ForEach-Object {
 
 
 
@@ -158,7 +177,8 @@ if (-not $RunId) {
 
 
 
-    $RunId = Get-Date -Format "yyyyMMdd-HHmmss"
+    $shortUuid = ([guid]::NewGuid().ToString("N").Substring(0, 8))
+    $RunId = "$(Get-Date -Format 'yyyyMMdd-HHmmss')-$System-$shortUuid"
 
 
 
@@ -479,6 +499,11 @@ if ($Password) {
 
 
 $runDir = Join-Path $root "docs\test-runs\$RunId"
+
+
+
+# 导出批次目录供子脚本使用（替代 ls -dt 找最新目录的脆弱逻辑，实现并行隔离）
+$env:TEST_RUN_DIR = $runDir
 
 
 
@@ -854,7 +879,7 @@ function Invoke-StageCheckResult {
 
 
 
-    $command = "python scripts/stage_contract.py check-stage --stage-id $StageId --mode $Mode --run-id $RunId --write-status"
+    $command = "python scripts/stage_contract.py check-stage --stage-id $StageId --mode $Mode --run-id $RunId --system $System --write-status"
 
 
 

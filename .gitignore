@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.*.local
+# 例外：projects/ 下的 .env.example 是配置模板，需提交
+!projects/*/.env.example
 
 # 测试报告
 reports/

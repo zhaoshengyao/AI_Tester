@@ -28,31 +28,66 @@ log_title() { echo -e "\n${BOLD}${CYAN}==== $* ====${NC}\n"; }
 SKIP_UI=false
 SKIP_PERF=false
 SKIP_SECURITY=false
+SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
 
-for arg in "$@"; do
-    case "$arg" in
-        --skip-ui) SKIP_UI=true ;;
-        --skip-perf) SKIP_PERF=true ;;
-        --skip-security) SKIP_SECURITY=true ;;
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --skip-ui) SKIP_UI=true; shift ;;
+        --skip-perf) SKIP_PERF=true; shift ;;
+        --skip-security) SKIP_SECURITY=true; shift ;;
+        --system)
+            SYSTEM_ID="$2"; shift 2 ;;
+        --system=*)
+            SYSTEM_ID="${1#--system=}"; shift ;;
         --help|-h)
             echo "用法: $0 [OPTIONS]"
             echo ""
             echo "选项:"
+            echo "  --system <name>  指定被测系统 (默认: crm，对应 projects/<name>/.env)"
             echo "  --skip-ui        跳过 UI 测试"
             echo "  --skip-perf      跳过性能测试"
             echo "  --skip-security  跳过安全测试"
             echo "  --help, -h       显示帮助"
             exit 0
             ;;
+        *)
+            echo "未知参数: $1"
+            exit 1
+            ;;
     esac
 done
 
+# ---------- 加载系统 .env ----------
+SYSTEM_ENV_FILE="$ROOT/projects/$SYSTEM_ID/.env"
+if [ -f "$SYSTEM_ENV_FILE" ]; then
+    log_info "加载系统配置: projects/$SYSTEM_ID/.env"
+    set -a
+    # shellcheck disable=SC1090
+    source "$SYSTEM_ENV_FILE"
+    set +a
+else
+    log_warn "系统配置不存在: $SYSTEM_ENV_FILE，使用现有环境变量"
+fi
+
+# 导出系统标识供子脚本消费
+export TEST_SYSTEM_ID="$SYSTEM_ID"
+
 # ---------- 批次目录 ----------
-BATCH_ID=$(date +%Y%m%d-%H%M%S)
+# 格式: {timestamp}-{system}-{uuid8}，避免并行撞名
+SHORT_UUID=$(uuidgen 2>/dev/null | cut -c1-8 || python -c "import uuid; print(uuid.uuid4().hex[:8])")
+BATCH_ID="$(date +%Y%m%d-%H%M%S)-${SYSTEM_ID}-${SHORT_UUID}"
 BATCH_DIR="$ROOT/docs/test-runs/$BATCH_ID"
 REPORT_DIR="$BATCH_DIR/reports"
 DEFECT_DIR="$BATCH_DIR/defects"
-mkdir -p "$REPORT_DIR" "$DEFECT_DIR"
+mkdir -p "$REPORT_DIR" "$DEFECT_DIR" "$BATCH_DIR/raw"
+
+# 导出批次目录供子脚本使用（替代 ls -dt 找最新目录的脆弱逻辑）
+export TEST_RUN_ID="$BATCH_ID"
+export TEST_RUN_DIR="$BATCH_DIR"
+
+log_info "系统: $SYSTEM_ID"
+log_info "批次ID: $BATCH_ID"
+log_info "批次目录: $BATCH_DIR"
 
 # ---------- 统计 ----------
 API_PASS=0
@@ -883,9 +918,10 @@ $([ "$SKIP_SECURITY" = false ] && echo "- [安全扫描日志](raw/security.log)
 EOF
 log_ok "批次摘要已生成"
 
-# 创建 latest 软链接
-rm -f "$ROOT/docs/test-runs/latest"
-ln -sf "$BATCH_DIR" "$ROOT/docs/test-runs/latest"
+# 创建 latest 软链接（按系统隔离，避免并行覆盖）
+LATEST_LINK="$ROOT/docs/test-runs/latest-$SYSTEM_ID"
+rm -f "$LATEST_LINK"
+ln -sf "$BATCH_DIR" "$LATEST_LINK"
 
 # ============================================================================
 # 9. 输出总结

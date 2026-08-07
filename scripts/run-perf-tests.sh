@@ -12,6 +12,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STAGE="${1:-all}"
 PERF_DIR="$ROOT/tests/performance/locust"
 
+# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
+SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+
 # ---------- 颜色输出 ----------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -59,7 +62,14 @@ log_info "API 地址: $API_BASE_URL"
 log_info ""
 
 cd "$PERF_DIR"
-mkdir -p results
+
+# 输出目录隔离：优先用 TEST_RUN_DIR（批次隔离），否则用本地 results/
+if [ -n "${TEST_RUN_DIR:-}" ]; then
+    PERF_RESULT_DIR="$TEST_RUN_DIR/raw/perf"
+else
+    PERF_RESULT_DIR="$PERF_DIR/results"
+fi
+mkdir -p "$PERF_RESULT_DIR"
 
 run_stage() {
     local stage_name="$1"
@@ -68,11 +78,11 @@ run_stage() {
     local spawn_rate="$4"
     local run_time="$5"
     local extra_args="${6:-}"
-    
+
     log_info "--- 阶段: $stage_name ---"
     log_info "脚本: $script, 用户: $users, 增速: $spawn_rate/s, 时长: $run_time"
-    
-    local result_file="results/result_${stage_name}.html"
+
+    local result_file="$PERF_RESULT_DIR/result_${stage_name}.html"
     $PYTHON_BIN -m locust \
         -f "$script" \
         --headless \
@@ -128,12 +138,12 @@ esac
 log_info "============================================"
 log_info "性能测试执行完成"
 log_info "============================================"
-log_info "报告目录: $PERF_DIR/results/"
+log_info "报告目录: $PERF_RESULT_DIR"
 
 # 列出所有结果文件
-if [ -d "results" ]; then
+if [ -d "$PERF_RESULT_DIR" ]; then
     log_info "结果文件:"
-    find results -name "*.html" -type f 2>/dev/null | while read -r f; do
+    find "$PERF_RESULT_DIR" -name "*.html" -type f 2>/dev/null | while read -r f; do
         log_info "  - $f"
     done
 fi

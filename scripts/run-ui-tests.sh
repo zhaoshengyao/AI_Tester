@@ -10,6 +10,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UI_DIR="$ROOT/tests/ui"
 
+# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
+SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+
 # ---------- 颜色输出 ----------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -106,21 +109,41 @@ log_info "============================================"
 log_info "UI 自动化测试 (Playwright)"
 log_info "============================================"
 log_info "项目目录: $UI_DIR"
+log_info "系统:     $SYSTEM_ID"
 log_info "浏览器:   Chromium"
 log_info ""
 
 START_TIME=$(date +%s)
 
+# 输出目录隔离：优先用 TEST_RUN_DIR（批次隔离），否则用 UI_DIR 默认路径
+if [ -n "${TEST_RUN_DIR:-}" ]; then
+    UI_OUTPUT_DIR="$TEST_RUN_DIR/raw/ui"
+    mkdir -p "$UI_OUTPUT_DIR"
+    PW_HTML_DIR="$UI_OUTPUT_DIR/playwright-report"
+    PW_JSON_FILE="$UI_OUTPUT_DIR/test-results.json"
+    PW_RESULTS_DIR="$UI_OUTPUT_DIR/test-results"
+else
+    PW_HTML_DIR="$UI_DIR/playwright-report"
+    PW_JSON_FILE="$UI_DIR/test-results.json"
+    PW_RESULTS_DIR="$UI_DIR/test-results"
+fi
+
 # 支持参数: smoke 模式或全量
 if [ "${1:-}" = "smoke" ]; then
     log_info "执行模式: 冒烟测试 (仅 crm-smoke)"
-    npx playwright test specs/crm/crm-smoke.spec.ts --reporter=html,json 2>&1
+    npx playwright test specs/crm/crm-smoke.spec.ts \
+        --reporter=html,json \
+        --output="$PW_RESULTS_DIR" \
+        2>&1 | tee "$PW_JSON_FILE"
 else
     log_info "执行模式: 全量测试"
-    npx playwright test --reporter=html,json 2>&1
+    npx playwright test \
+        --reporter=html,json \
+        --output="$PW_RESULTS_DIR" \
+        2>&1 | tee "$PW_JSON_FILE"
 fi
 
-EXIT_CODE=$?
+EXIT_CODE=${PIPESTATUS[0]}
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
@@ -130,9 +153,8 @@ log_info "执行完成 (耗时 ${DURATION}s)"
 log_info "============================================"
 
 # ---------- 结果汇总 ----------
-REPORT_DIR="$UI_DIR/playwright-report"
-HTML_REPORT="$REPORT_DIR/index.html"
-JSON_REPORT="$UI_DIR/test-results.json"
+HTML_REPORT="$PW_HTML_DIR/index.html"
+JSON_REPORT="$PW_JSON_FILE"
 
 if [ $EXIT_CODE -eq 0 ]; then
     log_ok "UI 测试全部通过 ✅"
@@ -144,7 +166,12 @@ log_info "HTML 报告: $HTML_REPORT"
 log_info "JSON 报告: $JSON_REPORT"
 
 # ---------- 归档报告 ----------
-BATCH_DIR=$(ls -dt "$ROOT/docs/test-runs"/*/ 2>/dev/null | head -1)
+# 优先用 TEST_RUN_DIR（由 run-full-test-flow.sh 注入），避免并行时 ls -dt 找到错误批次
+if [ -n "${TEST_RUN_DIR:-}" ]; then
+    BATCH_DIR="$TEST_RUN_DIR"
+else
+    BATCH_DIR=$(ls -dt "$ROOT/docs/test-runs"/*/ 2>/dev/null | head -1)
+fi
 if [ -n "$BATCH_DIR" ]; then
     mkdir -p "$BATCH_DIR/reports" "$BATCH_DIR/defects"
     REPORT_MD="$BATCH_DIR/reports/UI自动化测试报告.md"

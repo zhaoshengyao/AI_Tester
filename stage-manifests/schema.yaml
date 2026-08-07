@@ -39,3 +39,9 @@ status_values:
   - not_ready
   - needs_update
   - completed
+# 路径占位符：{run_id} 由 check-stage --run-id 解析；{system} 由 --system 或 TEST_SYSTEM_ID 解析
+# 第一步：run_id 已含 system 标识（格式 {ts}-{system}-{uuid}），manifest 路径保持 docs/test-runs/{run_id}/...
+# 第二步：拆 projects/ 后，manifest 路径改为 projects/{system}/docs/...
+allowed_path_placeholders:
+  - "{run_id}"
+  - "{system}"

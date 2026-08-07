@@ -21,17 +21,29 @@ function Get-MissingRequirementNames {
 
 function Get-LatestRunId {
     param(
-        [string]$TestRunsDir = $(Join-Path $Script:ProjectRoot "docs\test-runs")
+        [string]$TestRunsDir = $(Join-Path $Script:ProjectRoot "docs\test-runs"),
+        [string]$SystemId = $null
     )
 
     if (-not (Test-Path -LiteralPath $TestRunsDir)) {
         return $null
     }
 
-    $latestDir = Get-ChildItem -LiteralPath $TestRunsDir -Directory | 
-                 Where-Object { $_.Name -match '^\d{8}-\d{6}$' } |
-                 Sort-Object Name -Descending | 
-                 Select-Object -First 1
+    # 兼容两种格式：
+    #   旧格式: YYYYMMDD-HHMMSS
+    #   新格式: YYYYMMDD-HHMMSS-{system}-{uuid8}
+    $dirs = Get-ChildItem -LiteralPath $TestRunsDir -Directory |
+            Where-Object { $_.Name -match '^\d{8}-\d{6}(-\w+-[a-f0-9]{8})?$' }
+
+    # 按 system 过滤（新格式才有 system 段）
+    if ($SystemId) {
+        $dirs = $dirs | Where-Object {
+            $parts = $_.Name -split '-'
+            if ($parts.Count -ge 3) { $parts[2] -eq $SystemId } else { $false -or $SystemId -eq 'crm' }
+        }
+    }
+
+    $latestDir = $dirs | Sort-Object Name -Descending | Select-Object -First 1
 
     if ($latestDir) {
         return $latestDir.Name
@@ -60,7 +72,12 @@ function Get-StageRunContext {
         }
     }
 
-    $runDir = Join-Path $Script:ProjectRoot "docs\test-runs\$RunId"
+    # 优先用 TEST_RUN_DIR 环境变量（由 run-full-test-flow 注入，实现批次隔离与并行安全）
+    if ($env:TEST_RUN_DIR -and (Test-Path -LiteralPath $env:TEST_RUN_DIR)) {
+        $runDir = $env:TEST_RUN_DIR
+    } else {
+        $runDir = Join-Path $Script:ProjectRoot "docs\test-runs\$RunId"
+    }
     $stageStatusDir = Join-Path $runDir "stage-status"
     $rawRunDir = Join-Path $runDir "raw"
 
