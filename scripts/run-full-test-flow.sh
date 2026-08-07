@@ -29,12 +29,14 @@ SKIP_UI=false
 SKIP_PERF=false
 SKIP_SECURITY=false
 SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+FORCE_SYSTEM=false # 用于强制覆盖 system.yaml 配置
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --skip-ui) SKIP_UI=true; shift ;;
         --skip-perf) SKIP_PERF=true; shift ;;
         --skip-security) SKIP_SECURITY=true; shift ;;
+        --force-system) FORCE_SYSTEM=true; shift ;; # 强制执行命令行指定的 skip，忽略 yaml
         --system)
             SYSTEM_ID="$2"; shift 2 ;;
         --system=*)
@@ -43,10 +45,11 @@ while [ $# -gt 0 ]; do
             echo "用法: $0 [OPTIONS]"
             echo ""
             echo "选项:"
-            echo "  --system <name>  指定被测系统 (默认: crm，对应 projects/<name>/.env)"
+            echo "  --system <name>  指定被测系统 (默认: crm)"
             echo "  --skip-ui        跳过 UI 测试"
             echo "  --skip-perf      跳过性能测试"
             echo "  --skip-security  跳过安全测试"
+            echo "  --force-system   强制执行命令行指定的 skip，忽略 system.yaml 配置"
             echo "  --help, -h       显示帮助"
             exit 0
             ;;
@@ -71,6 +74,87 @@ fi
 
 # 导出系统标识供子脚本消费
 export TEST_SYSTEM_ID="$SYSTEM_ID"
+
+# ---------- 加载 system.yaml 动态配置 ----------
+SYSTEM_YAML="$ROOT/projects/$SYSTEM_ID/system.yaml"
+if [ -f "$SYSTEM_YAML" ] && [ "$FORCE_SYSTEM" = false ]; then
+    log_info "发现 system.yaml，读取测试范围配置..."
+    
+    # 用 python 解析 yaml，检查 test_scope 下各测试类型的 enabled 状态
+    # 如果某个测试在 yaml 中明确设为 false，则跳过
+    if command -v python3 &> /dev/null || command -v python &> /dev/null; then
+        PYTHON_BIN="python3"
+        if ! command -v python3 &> /dev/null; then PYTHON_BIN="python"; fi
+        
+        # 解析结果写入临时文件，再 source 回 shell 变量
+        CONFIG_TMP=$(mktemp /tmp/test_scope_XXXXXX.sh)
+        $PYTHON_BIN << PYEOF
+import yaml
+try:
+    with open("$SYSTEM_YAML") as f:
+        config = yaml.safe_load(f)
+    scope = config.get("test_scope", {})
+    for test_type in ["api", "ui", "performance", "security"]:
+        enabled = scope.get(test_type, {}).get("enabled", False)
+        var_name = "YAML_ENABLED_" + test_type.upper()
+        print(f"{var_name}={'true' if enabled else 'false'}")
+except Exception as e:
+    pass
+PYEOF
+        $PYTHON_BIN -c "
+import yaml
+try:
+    with open('$SYSTEM_YAML') as f:
+        config = yaml.safe_load(f)
+    scope = config.get('test_scope', {})
+    for test_type in ['api', 'ui', 'performance', 'security']:
+        enabled = scope.get(test_type, {}).get('enabled', False)
+        var_name = 'YAML_ENABLED_' + test_type.upper()
+        print(f'{var_name}={str(enabled).lower()}')
+except Exception as e:
+    pass
+" > "$CONFIG_TMP" 2>/dev/null
+        
+        if [ -f "$CONFIG_TMP" ]; then
+            source "$CONFIG_TMP" 2>/dev/null
+            rm -f "$CONFIG_TMP"
+            
+            # 根据 yaml 配置覆盖 skip 变量
+            if [ "${YAML_ENABLED_API:-false}" = "false" ] && [ "$SKIP_UI" = "false" ]; then
+                : # API 是核心，默认启用，除非命令行明确跳过
+            fi
+            
+            if [ "${YAML_ENABLED_UI:-false}" = "false" ]; then
+                if [ "$SKIP_UI" = "false" ]; then
+                    log_info "system.yaml 配置 UI enabled=false，跳过 UI 测试"
+                    SKIP_UI=true
+                fi
+            fi
+            
+            if [ "${YAML_ENABLED_PERFORMANCE:-false}" = "false" ]; then
+                if [ "$SKIP_PERF" = "false" ]; then
+                    log_info "system.yaml 配置 performance enabled=false，跳过性能测试"
+                    SKIP_PERF=true
+                fi
+            fi
+            
+            if [ "${YAML_ENABLED_SECURITY:-false}" = "false" ]; then
+                if [ "$SKIP_SECURITY" = "false" ]; then
+                    log_info "system.yaml 配置 security enabled=false，跳过安全测试"
+                    SKIP_SECURITY=true
+                fi
+            fi
+        fi
+    else
+        log_warn "未找到 Python，无法解析 system.yaml，使用默认配置"
+    fi
+else
+    if [ "$FORCE_SYSTEM" = true ]; then
+        log_info "--force-system 已启用，使用命令行参数，忽略 system.yaml"
+    else
+        log_info "未找到 system.yaml，使用默认全流程配置"
+    fi
+fi
 
 # ---------- 批次目录 ----------
 # 格式: {timestamp}-{system}-{uuid8}，避免并行撞名

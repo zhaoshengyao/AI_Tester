@@ -1,0 +1,114 @@
+# =========================================================================
+# 通用系统描述文件 (System Description File)
+# 这是测试框架与被测系统解耦的核心配置。
+# 任何新系统接入，只需创建此文件，无需修改框架代码。
+# =========================================================================
+
+# 系统唯一标识（英文、小写、无特殊字符）
+id: crm
+
+# 系统显示名称（用于报告展示）
+name: CRM 客户关系管理系统
+
+# ------- 协议声明（Protocol Declaration）-------
+# 定义系统使用的通信协议。框架会根据协议类型选择合适的客户端库和测试工具。
+# 可选类型：http, mqtt, websocket, grpc, tcp, udp
+protocols:
+  # 默认主协议
+  default:
+    type: http
+    config:
+      # HTTP 协议特有配置
+      base_url: "http://192.168.2.97:6089"
+      api_base_path: "/prod-api" # API 前缀
+      timeout: 30
+  # 如系统涉及其他协议（如 WebSocket 实时通知），可在此追加
+  # secondary:
+  #   type: websocket
+  #   config:
+  #     url: "ws://example.com/ws"
+
+# ------- 认证声明（Authentication Declaration）-------
+# 定义系统的认证方式。框架会根据 type 选择认证策略。
+# 可选类型: token, oauth2, api_key, certificate, basic, none
+auth:
+  type: oauth2
+  config:
+    # OAuth2 密码模式配置
+    grant_type: password
+    client_id: "e5cd7e4891bf95d1d19206ce24a7b32e"
+    login_path: "/prod-api/system/login"
+    token_field: "access_token" # 从登录响应中提取 token 的字段名
+    token_type: "Bearer" # Token 前缀（如 "Bearer", "Basic"）
+    # 用户名和密码字段名（针对密码模式）
+    username_field: "username"
+    password_field: "password"
+    # 密码加密方式（可选：plaintext, aes-256-gcm, base64）
+    password_encryption: "aes-256-gcm"
+
+# ------- 测试范围声明（Test Scope Declaration）-------
+# 明确系统支持哪些类型的自动化测试。框架根据此配置决定执行或跳过。
+# enabled: true/false
+# 如果 enabled 为 false，对应测试步骤将被跳过，且标记为"未执行"。
+test_scope:
+  api:
+    enabled: true
+    # API 测试目录（相对于系统根目录）
+    tests_dir: "tests/api/testsuites"
+    # 冒烟测试关键字/标记
+    smoke_marker: "smoke"
+  ui:
+    enabled: true
+    tests_dir: "tests/ui/specs"
+    # UI 测试基础 URL
+    base_url: "http://192.168.2.97:6089"
+    # 全局登录脚本
+    global_setup: "tests/ui/global-setup.ts"
+  performance:
+    enabled: true
+    # Locust 测试目录
+    tests_dir: "tests/performance/locust"
+    # 冒烟测试配置
+    smoke:
+      users: 5
+      spawn_rate: 1
+      duration: "30s"
+    # 常规测试配置
+    full:
+      users: 50
+      spawn_rate: 5
+      duration: "120s"
+  security:
+    enabled: true
+    # 安全扫描目标
+    target_url: "http://192.168.2.97:6089"
+    # 扫描范围（可选）
+    scope:
+      - "/prod-api/.*"
+      - "/api/.*"
+
+# ------- 路径映射（Path Mapping）-------
+# 定义系统特定的资源路径，覆盖框架默认值。
+paths:
+  # 测试用例目录
+  test_cases: "docs/cases"
+  # 测试数据目录
+  test_data: "tests/data"
+  # 环境配置文件
+  env_file: ".env"
+  # 输出产物目录（相对于框架根目录）
+  output_dir: "docs/test-runs"
+
+# ------- 特殊入口（Entry Points）-------
+# 定义系统特有的测试入口脚本（如果存在）。
+# 框架会优先使用这里定义的脚本。
+# scripts:
+#   run_api: "scripts/run-api-tests.sh"
+#   run_ui: "scripts/run-ui-tests.sh"
+
+# ------- 依赖声明（Dependencies）-------
+# 声明该系统测试依赖的环境和工具，框架可据此进行预检。
+# dependencies:
+#   python_packages: ["pytest", "requests"]
+#   node_packages: ["playwright"]
+#   system_tools: ["locust", "nmap"]
