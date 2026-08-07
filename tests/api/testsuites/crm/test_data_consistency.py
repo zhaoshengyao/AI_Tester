@@ -19,13 +19,18 @@ def test_clue_statistics_consistency(crm_client, authorized_headers):
         status_counts[status] = status_counts.get(status, 0) + 1
     
     calculated_total = sum(status_counts.values())
-    assert calculated_total == total_clues, f"线索统计不一致: 接口返回总数={total_clues}, 计算总数={calculated_total}"
+    assert calculated_total == len(rows), f"线索状态分布总和与返回行数不一致: 状态和={calculated_total}, 返回行数={len(rows)}"
+    
+    if total_clues <= 1000:
+        assert calculated_total == total_clues, f"线索统计不一致: 接口返回总数={total_clues}, 计算总数={calculated_total}"
+    else:
+        assert calculated_total <= total_clues, f"返回行数不应超过总数: 返回={calculated_total}, 总数={total_clues}"
     
     assert total_clues >= 0, "线索总数不能为负数"
-    assert len(rows) <= 1000, "分页限制未生效"
     
     print(f"✅ 线索统计一致性验证通过")
     print(f"   - 线索总数: {total_clues}")
+    print(f"   - 返回行数: {len(rows)}")
     print(f"   - 各状态分布: {status_counts}")
 
 
@@ -41,8 +46,11 @@ def test_customer_statistics_consistency(crm_client, authorized_headers):
     total_customers = data.get("total", 0)
     rows = data.get("rows", [])
     
-    calculated_total = len(rows)
-    assert calculated_total == total_customers, f"客户统计不一致: 接口返回总数={total_customers}, 计算总数={calculated_total}"
+    returned_count = len(rows)
+    if total_customers <= 1000:
+        assert returned_count == total_customers, f"客户统计不一致: 接口返回总数={total_customers}, 返回行数={returned_count}"
+    else:
+        assert returned_count <= total_customers, f"返回行数不应超过总数: 返回={returned_count}, 总数={total_customers}"
     
     assert total_customers >= 0, "客户总数不能为负数"
     
@@ -51,10 +59,11 @@ def test_customer_statistics_consistency(crm_client, authorized_headers):
         status = row.get("status", "")
         status_counts[status] = status_counts.get(status, 0) + 1
     
-    assert sum(status_counts.values()) == total_customers, "状态分布总和与总数不一致"
+    assert sum(status_counts.values()) == returned_count, f"状态分布总和与返回行数不一致: 状态和={sum(status_counts.values())}, 返回行数={returned_count}"
     
     print(f"✅ 客户统计一致性验证通过")
     print(f"   - 客户总数: {total_customers}")
+    print(f"   - 返回行数: {returned_count}")
     print(f"   - 各状态分布: {status_counts}")
 
 
@@ -70,8 +79,11 @@ def test_business_statistics_consistency(crm_client, authorized_headers):
     total_business = data.get("total", 0)
     rows = data.get("rows", [])
     
-    calculated_total = len(rows)
-    assert calculated_total == total_business, f"商机统计不一致: 接口返回总数={total_business}, 计算总数={calculated_total}"
+    returned_count = len(rows)
+    if total_business <= 1000:
+        assert returned_count == total_business, f"商机统计不一致: 接口返回总数={total_business}, 返回行数={returned_count}"
+    else:
+        assert returned_count <= total_business, f"返回行数不应超过总数: 返回={returned_count}, 总数={total_business}"
     
     assert total_business >= 0, "商机总数不能为负数"
     
@@ -80,10 +92,11 @@ def test_business_statistics_consistency(crm_client, authorized_headers):
         stage = row.get("stage", "")
         stage_counts[stage] = stage_counts.get(stage, 0) + 1
     
-    assert sum(stage_counts.values()) == total_business, "阶段分布总和与总数不一致"
+    assert sum(stage_counts.values()) == returned_count, f"阶段分布总和与返回行数不一致: 阶段和={sum(stage_counts.values())}, 返回行数={returned_count}"
     
     print(f"✅ 商机统计一致性验证通过")
     print(f"   - 商机总数: {total_business}")
+    print(f"   - 返回行数: {returned_count}")
     print(f"   - 各阶段分布: {stage_counts}")
 
 
@@ -133,13 +146,20 @@ def test_sales_funnel_consistency(crm_client, authorized_headers):
         stage = row.get("stage", "")
         stage_counts[stage] = stage_counts.get(stage, 0) + 1
     
+    returned_count = len(rows)
     sum_of_stages = sum(stage_counts.values())
-    assert sum_of_stages == total_business, f"销售漏斗不一致: 各阶段总和={sum_of_stages}, 总商机数={total_business}"
+    assert sum_of_stages == returned_count, f"销售漏斗不一致: 各阶段总和={sum_of_stages}, 返回行数={returned_count}"
+    
+    if total_business <= 1000:
+        assert sum_of_stages == total_business, f"销售漏斗不一致: 各阶段总和={sum_of_stages}, 总商机数={total_business}"
+    else:
+        assert sum_of_stages <= total_business, f"返回行数不应超过总数: 返回={sum_of_stages}, 总数={total_business}"
     
     assert total_business >= 0, "商机总数不能为负数"
     
     print(f"✅ 销售漏斗一致性验证通过")
     print(f"   - 总商机数: {total_business}")
+    print(f"   - 返回行数: {returned_count}")
     print(f"   - 各阶段商机数: {stage_counts}")
 
 

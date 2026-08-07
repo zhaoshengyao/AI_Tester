@@ -59,6 +59,7 @@ log_info "API 地址: $API_BASE_URL"
 log_info ""
 
 cd "$PERF_DIR"
+mkdir -p results
 
 run_stage() {
     local stage_name="$1"

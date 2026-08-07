@@ -4,7 +4,7 @@ import yaml
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../'))
 
-from utils.auth import get_env_config, get_auth_token
+from utils.auth import get_env_config as _get_env_config, get_auth_token as _get_auth_token, encrypt_password as _encrypt_password
 
 
 def get_env_config(env_key, default_value=None):
@@ -35,4 +35,12 @@ def get_env_config(env_key, default_value=None):
     return default_value
 
 
-__all__ = ["get_env_config", "get_auth_token"]
+def get_auth_token(client=None):
+    return _get_auth_token(client)
+
+
+def encrypt_password(password, key):
+    return _encrypt_password(password, key)
+
+
+__all__ = ["get_env_config", "get_auth_token", "encrypt_password"]

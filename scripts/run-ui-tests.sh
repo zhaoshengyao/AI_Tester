@@ -51,6 +51,43 @@ else
     log_ok "依赖已就绪 (node_modules 存在)"
 fi
 
+# ---------- 检查系统依赖（关键！）----------
+log_info "检查 Playwright 系统依赖..."
+MISSING_DEPS=()
+
+check_lib() {
+    if ! ldconfig -p 2>/dev/null | grep -q "$1"; then
+        MISSING_DEPS+=("$1")
+        return 1
+    fi
+    return 0
+}
+
+check_lib "libgbm" || log_warn "缺少 libgbm (需要 mesa-libgbm 包)"
+check_lib "libnss3" || log_warn "缺少 libnss3"
+check_lib "libatk-1.0" || log_warn "缺少 libatk1.0"
+check_lib "libatk-bridge" || log_warn "缺少 libatk-bridge"
+check_lib "libcups" || log_warn "缺少 libcups"
+check_lib "libpango-1.0" || log_warn "缺少 libpango"
+check_lib "libasound" || log_warn "缺少 libasound"
+
+if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
+    log_warn "检测到缺失的系统依赖，尝试安装..."
+    log_info "正在安装 mesa-libgbm 等依赖..."
+    
+    # openEuler/CentOS 系统
+    if command -v yum &>/dev/null; then
+        yum install -y mesa-libgbm mesa-libgbm-devel 2>&1 | tail -3
+    # Ubuntu/Debian 系统
+    elif command -v apt-get &>/dev/null; then
+        apt-get update -qq && apt-get install -y libgbm1 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libpango-1.0-0 libasound2 2>&1 | tail -3
+    fi
+    
+    log_ok "依赖安装完成"
+else
+    log_ok "系统依赖已就绪"
+fi
+
 # ---------- 检查 Playwright 浏览器 ----------
 if ! npx playwright install --dry-run &>/dev/null 2>&1; then
     log_warn "Playwright 浏览器可能未安装，尝试安装..."
@@ -93,9 +130,9 @@ log_info "执行完成 (耗时 ${DURATION}s)"
 log_info "============================================"
 
 # ---------- 结果汇总 ----------
-REPORT_DIR="$UI_DIR/reports"
-HTML_REPORT="$REPORT_DIR/html/index.html"
-JSON_REPORT="$REPORT_DIR/raw/result.json"
+REPORT_DIR="$UI_DIR/playwright-report"
+HTML_REPORT="$REPORT_DIR/index.html"
+JSON_REPORT="$UI_DIR/test-results.json"
 
 if [ $EXIT_CODE -eq 0 ]; then
     log_ok "UI 测试全部通过 ✅"

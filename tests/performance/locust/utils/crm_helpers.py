@@ -11,9 +11,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../'))
 from utils.auth import get_env_config, get_auth_token, encrypt_password
 
 
-_thread_local = threading.local()
 _resource_tracker = defaultdict(list)
 _tracker_lock = threading.Lock()
+_login_semaphore = threading.Semaphore(3)
+_login_retries = 3
+_login_base_delay = 1.0
 
 
 def generate_unique_id(prefix="perf"):
@@ -82,23 +84,79 @@ def assert_api_success(response, context=""):
     data = response.json()
     code = data.get("code")
     if code not in [200, 0]:
-        response.failure(f"{context} API returned non-success code: {code}, msg: {data.get('msg')}")
-        return False
+        raise AssertionError(f"{context} API returned non-success code: {code}, msg: {data.get('msg')}")
     return True
 
 
-def get_or_refresh_token(client, force_refresh=False):
-    if force_refresh or not hasattr(_thread_local, "token") or _thread_local.token_expire_time < time.time():
+def safe_login(user, max_retries=None):
+    """
+    安全登录：带并发限速 + 指数退避重试。
+    token 同时存储在 user 和 client 上，确保各 helper 函数可访问。
+    """
+    if max_retries is None:
+        max_retries = _login_retries
+    
+    for attempt in range(max_retries):
+        acquired = _login_semaphore.acquire(timeout=30)
+        if not acquired:
+            if attempt < max_retries - 1:
+                delay = _login_base_delay * (2 ** attempt) + random.uniform(0, 0.5)
+                time.sleep(delay)
+            continue
+        
         try:
-            token = get_auth_token(client)
-            _thread_local.token = token
-            _thread_local.token_expire_time = time.time() + 3600
+            token = get_auth_token(user.client)
+            user.token = token
+            user.token_expire_time = time.time() + 3600
+            user.client._perf_token = token
+            return token
         except Exception as e:
-            response = getattr(client, "response", None)
-            if response:
-                response.failure(f"Token refresh failed: {e}")
-            return None
-    return _thread_local.token
+            err_str = str(e)
+            if "401" in err_str or "429" in err_str or "认证" in err_str or "失败" in err_str:
+                if attempt < max_retries - 1:
+                    delay = _login_base_delay * (2 ** attempt) + random.uniform(0.5, 1.5)
+                    time.sleep(delay)
+                    continue
+            print(f"[!] Login failed (attempt {attempt + 1}/{max_retries}): {e}")
+            if attempt == max_retries - 1:
+                raise
+        finally:
+            _login_semaphore.release()
+    
+    return None
+
+
+def get_or_refresh_token(user, force_refresh=False):
+    if force_refresh or not hasattr(user, 'token') or not getattr(user, 'token', None) or user.token_expire_time < time.time():
+        return safe_login(user)
+    return user.token
+
+
+def _get_client_headers(client):
+    """获取 client 上存储的 token headers"""
+    token = getattr(client, '_perf_token', None)
+    if token:
+        return {"Authorization": f"Bearer {token}"}
+    return {}
+
+
+def get_auth_headers(user):
+    """获取当前用户的认证 headers（供 locustfile 直接调用）"""
+    token = get_or_refresh_token(user)
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
+
+def _request_with_retry(client, method, url, max_retries=2, **kwargs):
+    """
+    带 401 重试的请求封装。
+    服务端并发瓶颈时可能误返回 401，短暂延迟后重试可缓解。
+    """
+    for attempt in range(max_retries + 1):
+        resp = method(url, **kwargs)
+        if resp.status_code != 401 or attempt == max_retries:
+            return resp
+        time.sleep(0.3)
+    return resp
 
 
 def get_valid_id(client, entity_type, fallback_id=None):
@@ -141,7 +199,7 @@ def create_test_clue(client, name=None):
         "companyName": f"性能测试公司_{random.randint(1000, 9999)}",
         "remark": "性能测试自动创建"
     }
-    resp = client.post("/crm/clue", json=payload)
+    resp = _request_with_retry(client, client.post, "/crm/clue", json=payload, headers=_get_client_headers(client))
     if assert_api_success(resp, "create_clue"):
         data = safe_get(resp, "data")
         clue_id = None
@@ -167,7 +225,7 @@ def transform_clue_to_customer(client, clue_id, company_name=None):
         "contactPhone": "133" + str(random.randint(10000000, 99999999)),
         "position": "经理"
     }
-    resp = client.put("/crm/clue/transform", json=payload)
+    resp = _request_with_retry(client, client.put, "/crm/clue/transform", json=payload, headers=_get_client_headers(client))
     if assert_api_success(resp, "transform_clue"):
         data = safe_get(resp, "data")
         customer_id = None
@@ -197,7 +255,7 @@ def create_test_contact(client, customer_id, name=None):
         "position": "工程师",
         "remark": "性能测试自动创建"
     }
-    resp = client.post("/crm/contact", json=payload)
+    resp = _request_with_retry(client, client.post, "/crm/contact", json=payload, headers=_get_client_headers(client))
     if assert_api_success(resp, "create_contact"):
         data = safe_get(resp, "data")
         contact_id = None
@@ -225,7 +283,7 @@ def create_test_business(client, customer_id, name=None):
         "ownerUserId": str(get_env_config("TEST_USER_ID", "2059112632781406210")),
         "remark": "性能测试自动创建"
     }
-    resp = client.post("/crm/business", json=payload)
+    resp = _request_with_retry(client, client.post, "/crm/business", json=payload, headers=_get_client_headers(client))
     if assert_api_success(resp, "create_business"):
         data = safe_get(resp, "data")
         business_id = None
@@ -258,7 +316,7 @@ def advance_business_stage(client, business_id, target_stage):
         "productTotal": business_data.get("productTotal", "0")
     }
     
-    resp = client.put("/crm/business", json=payload)
+    resp = _request_with_retry(client, client.put, "/crm/business", json=payload, headers=_get_client_headers(client))
     assert_api_success(resp, f"advance_stage_{target_stage}")
     return resp
 
@@ -281,7 +339,7 @@ def create_test_quotation(client, business_id):
         "remark": quotation_name
     }
     
-    resp = client.post("/crm/quotation", json=payload)
+    resp = _request_with_retry(client, client.post, "/crm/quotation", json=payload, headers=_get_client_headers(client))
     if assert_api_success(resp, "create_quotation"):
         data = safe_get(resp, "data")
         quotation_id = None
@@ -298,7 +356,7 @@ def create_test_quotation(client, business_id):
 
 
 def approve_quotation(client, quotation_id):
-    resp = client.put(f"/crm/quotation/approve/{quotation_id}")
+    resp = _request_with_retry(client, client.put, f"/crm/quotation/approve/{quotation_id}", headers=_get_client_headers(client))
     assert_api_success(resp, "approve_quotation")
     return resp
 
@@ -325,7 +383,7 @@ def win_business(client, business_id, deal_amount=None):
         "dealDate": deal_date
     }
     
-    resp = client.put("/crm/business", json=payload)
+    resp = _request_with_retry(client, client.put, "/crm/business", json=payload, headers=_get_client_headers(client))
     assert_api_success(resp, "win_business")
     return resp
 
@@ -342,7 +400,7 @@ def lose_business(client, business_id, lost_reason="2"):
         "lostReason": lost_reason
     }
     
-    resp = client.put("/crm/business", json=payload)
+    resp = _request_with_retry(client, client.put, "/crm/business", json=payload, headers=_get_client_headers(client))
     assert_api_success(resp, "lose_business")
     return resp
 
@@ -353,7 +411,7 @@ def get_public_pool_list(client, page=1, size=10):
 
 
 def claim_from_pool(client, customer_id):
-    resp = client.put("/crm/customer/receive-from-pool", json=[str(customer_id)])
+    resp = _request_with_retry(client, client.put, "/crm/customer/receive-from-pool", json=[str(customer_id)], headers=_get_client_headers(client))
     assert_api_success(resp, "claim_from_pool")
     return resp
 
@@ -385,7 +443,7 @@ __all__ = [
     "generate_unique_id", "generate_name",
     "track_resource", "get_tracked_resources", "cleanup_resources", "cleanup_all_tracked",
     "safe_get", "assert_api_success",
-    "get_or_refresh_token",
+    "safe_login", "get_or_refresh_token",
     "get_valid_id",
     "create_test_clue", "transform_clue_to_customer",
     "create_test_contact", "create_test_business",

@@ -247,7 +247,8 @@ class TestBusinessWorkflow:
             assert data.get("code") == 200, "商机应存在"
             business_data = data.get("data", {})
             if workflow_data.get("customer_id"):
-                assert business_data.get("customerId") == workflow_data["customer_id"], "商机应关联正确的客户"
+                assert str(business_data.get("customerId")) == str(workflow_data["customer_id"]), \
+                    f"商机应关联正确的客户: 期望customerId={workflow_data['customer_id']}, 实际={business_data.get('customerId')}"
         
         # 验证报价存在且关联正确的商机
         if workflow_data.get("quotation_id"):
@@ -256,9 +257,10 @@ class TestBusinessWorkflow:
             assert data.get("code") == 200, "报价应存在"
             quotation_data = data.get("data", {})
             if workflow_data.get("business_id"):
-                assert quotation_data.get("businessId") == workflow_data["business_id"], "报价应关联正确的商机"
+                assert str(quotation_data.get("businessId")) == str(workflow_data["business_id"]), \
+                    f"报价应关联正确的商机: 期望businessId={workflow_data['business_id']}, 实际={quotation_data.get('businessId')}"
         
-        print("✅ WF-009 流程数据一致性验证通过")
+        print("✅ WF-008 流程数据一致性验证通过")
 
 
 @pytest.fixture(scope="class")

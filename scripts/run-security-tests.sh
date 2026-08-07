@@ -71,7 +71,7 @@ from scanner.security_scanner import SecurityScanner
 import json
 
 scanner = SecurityScanner(base_url='$API_BASE_URL')
-results = scanner.run_full_scan()
+results = scanner.run()
 print(json.dumps(results, indent=2, ensure_ascii=False))
 " 2>&1 | tee "$REPORT_FILE"
 
