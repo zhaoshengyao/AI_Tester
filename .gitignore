@@ -30,6 +30,7 @@ __pycache__/
 # 编辑器配置
 .vscode/
 .idea/
+.trae/
 *.swp
 *.swo
 
@@ -55,3 +56,9 @@ tests/ui/.auth/
 
 # Locust reports
 tests/performance/locust/reports/
+
+# 诊断输出（调试产物，不提交）
+tests/ui/diagnose-output/
+
+# 运行时状态文件
+scripts/.rerun_state.txt
