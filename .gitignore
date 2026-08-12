@@ -64,3 +64,16 @@ tests/ui/diagnose-output/
 
 # 运行时状态文件
 scripts/.rerun_state.txt
+
+# 根目录临时脚本（下划线前缀 = 一次性工作脚本）
+# 仅保留 5 个流水线活跃脚本，其余自动忽略
+_*.py
+!_ipd_run_api_pipeline.py
+!_gen_api_report.py
+!_gen_ui_perf_sec_mat_reports.py
+!_ipd_preflight.py
+!_run_wr15_cases.py
+
+# 临时输出文件
+test-run-output.txt
+null
