@@ -1,0 +1,15 @@
+============================= test session starts =============================
+collecting ... collected 8 items
+
+tests/api/ipd/test_auth_login.py::test_login_success_6_params_match_expected_conftest PASSED [ 12%]
+tests/api/ipd/test_auth_login.py::test_login_wrong_password_returns_500_msg_contains_keyword PASSED [ 25%]
+tests/api/ipd/test_auth_login.py::test_login_underscore_clientid_must_fail_camel_required PASSED [ 37%]
+tests/api/ipd/test_auth_login.py::test_login_underscore_granttype_must_fail_camel_required PASSED [ 50%]
+tests/api/ipd/test_auth_login.py::test_login_missing_tenantid_records_real_response_no_stack PASSED [ 62%]
+tests/api/ipd/test_auth_login.py::test_login_invalid_granttype_5_values_all_fail PASSED [ 75%]
+tests/api/ipd/test_auth_login.py::test_auth_code_captcha_disabled PASSED [ 87%]
+tests/api/ipd/test_auth_login.py::test_logout_post_invalidates_token PASSED [100%]
+
+============================== 8 passed in 1.02s ==============================
+
+===== STDERR =====

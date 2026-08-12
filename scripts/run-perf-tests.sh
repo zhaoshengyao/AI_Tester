@@ -1,42 +1,38 @@
 #!/usr/bin/env bash
 # ============================================================================
-# 性能测试 - Linux 原生执行脚本
+# 性能测试 - 通用执行脚本
 # 用法: ./scripts/run-perf-tests.sh [STAGE]
 #   STAGE: smoke | regular | stress | stability | extreme | all (默认 all)
 # 环境: 需要 Python 3.10+, locust
+# 配置: 从 projects/<system>/system.yaml 动态读取，无需修改脚本
 # ============================================================================
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STAGE="${1:-all}"
-PERF_DIR="$ROOT/tests/performance/locust"
 
-# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
-SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+# ---------- 加载共享库 ----------
+# shellcheck disable=SC1090
+source "$ROOT/shared/lib/test_framework.sh"
 
-# ---------- 颜色输出 ----------
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# ---------- 加载 system.yaml 配置 ----------
+load_system_config "$ROOT" "${TEST_SYSTEM_ID:-crm}"
 
-log_info()  { echo -e "${CYAN}[INFO]${NC} $*"; }
-log_ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
-log_warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
+# ---------- 从 system.yaml 获取配置 ----------
+PERF_DIR="$ROOT/$(get_tests_dir performance "tests/performance/locust")"
+API_BASE_URL="$(get_api_base_url "http://192.168.2.97:6089/prod-api")"
+
+# 性能测试配置（从 system.yaml 读取，有默认值回退）
+PERF_SMOKE_USERS="${PERF_SMOKE_USERS:-5}"
+PERF_SMOKE_SPAWN_RATE="${PERF_SMOKE_SPAWN_RATE:-1}"
+PERF_SMOKE_DURATION="${PERF_SMOKE_DURATION:-60s}"
+PERF_FULL_USERS="${PERF_FULL_USERS:-50}"
+PERF_FULL_SPAWN_RATE="${PERF_FULL_SPAWN_RATE:-5}"
+PERF_FULL_DURATION="${PERF_FULL_DURATION:-300s}"
 
 # ---------- Python 检查 ----------
-PYTHON_BIN="python3"
-if ! command -v $PYTHON_BIN &>/dev/null; then
-    PYTHON_BIN="python"
-fi
-
-if ! command -v $PYTHON_BIN &>/dev/null; then
-    log_error "Python 未找到，请安装 Python 3.10+"
-    exit 1
-fi
+detect_python || exit 1
 
 # ---------- 检查/安装 locust ----------
 if ! $PYTHON_BIN -c "import locust" &>/dev/null; then
@@ -51,14 +47,16 @@ else
     log_ok "Locust 已就绪 ($($PYTHON_BIN -c 'import locust; print(locust.__version__)'))"
 fi
 
-# ---------- 环境变量 ----------
-export API_BASE_URL="${API_BASE_URL:-http://192.168.2.97:6089/prod-api}"
+# ---------- 导出环境变量 ----------
+export API_BASE_URL
 
 # ---------- 分阶段执行 ----------
 log_info "============================================"
 log_info "性能测试 - $STAGE"
 log_info "============================================"
-log_info "API 地址: $API_BASE_URL"
+log_info "系统:       ${SYS_ID:-crm}"
+log_info "API 地址:   $API_BASE_URL"
+log_info "测试目录:   $PERF_DIR"
 log_info ""
 
 cd "$PERF_DIR"
@@ -105,10 +103,10 @@ run_stage() {
 
 case "$STAGE" in
     smoke)
-        run_stage "smoke" "api/locustfile_smoke.py" 5 1 60s
+        run_stage "smoke" "api/locustfile_smoke.py" "$PERF_SMOKE_USERS" "$PERF_SMOKE_SPAWN_RATE" "$PERF_SMOKE_DURATION"
         ;;
     regular)
-        run_stage "regular" "api/locustfile_crm_api.py" 50 5 300s
+        run_stage "regular" "api/locustfile_crm_api.py" "$PERF_FULL_USERS" "$PERF_FULL_SPAWN_RATE" "$PERF_FULL_DURATION"
         ;;
     stress)
         run_stage "stress" "api/locustfile_crm_api.py" 200 10 600s
@@ -121,8 +119,8 @@ case "$STAGE" in
         ;;
     all)
         log_info "执行全部阶段..."
-        run_stage "smoke" "api/locustfile_smoke.py" 5 1 60s || true
-        run_stage "regular" "api/locustfile_crm_api.py" 50 5 300s || true
+        run_stage "smoke" "api/locustfile_smoke.py" "$PERF_SMOKE_USERS" "$PERF_SMOKE_SPAWN_RATE" "$PERF_SMOKE_DURATION" || true
+        run_stage "regular" "api/locustfile_crm_api.py" "$PERF_FULL_USERS" "$PERF_FULL_SPAWN_RATE" "$PERF_FULL_DURATION" || true
         run_stage "stress" "api/locustfile_crm_api.py" 200 10 600s || true
         run_stage "stability" "api/locustfile_crm_api.py" 30 2 3600s || true
         run_stage "extreme" "api/locustfile_crm_api.py" 500 20 600s || true
@@ -131,7 +129,6 @@ case "$STAGE" in
         log_error "未知阶段: $STAGE"
         log_info "可选: smoke, regular, stress, stability, extreme, all"
         exit 1
-        ;;
 esac
 
 # ---------- 生成汇总报告 ----------

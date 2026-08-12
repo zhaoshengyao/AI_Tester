@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$ForceNotExecutedReason = ""
 )
 
@@ -39,15 +39,15 @@ function Write-UiDocuments {
 UI 自动化执行
 
 ## 输入文件
-- docs/cases/功能测试用例-评审版.md
-- docs/test-runs/$($runContext.RunId)/reports/UI自动化覆盖矩阵.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/功能测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI自动化覆盖矩阵.md
 - scripts/run-ui-tests.ps1
 
 ## 产出文件
-- tests/ui/reports/
-- docs/test-runs/$($runContext.RunId)/reports/UI自动化测试报告.md
-- docs/test-runs/$($runContext.RunId)/reports/UI兼容性测试报告.md
-- docs/test-runs/$($runContext.RunId)/defects/UI缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/tests/ui/reports/
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI自动化测试报告.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI兼容性测试报告.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/UI缺陷清单.md
 
 ## 正文/核心内容
 - 测试批次：$($runContext.RunId)
@@ -57,8 +57,8 @@ UI 自动化执行
 - 执行命令：$CommandLine
 - 执行说明：$Summary
 - 原始结果路径：
-  - tests/ui/reports/html/
-  - tests/ui/reports/raw/result.json
+  - projects/$env:TEST_SYSTEM_ID/tests/ui/reports/html/
+  - projects/$env:TEST_SYSTEM_ID/tests/ui/reports/raw/result.json
 
 ## 执行结论
 - 本轮 UI 自动化状态：$ExecutionStatus。
@@ -79,11 +79,11 @@ UI 自动化执行
 UI 兼容性执行
 
 ## 输入文件
-- docs/cases/功能测试用例-评审版.md
-- docs/test-runs/$($runContext.RunId)/reports/UI自动化覆盖矩阵.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/功能测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI自动化覆盖矩阵.md
 
 ## 产出文件
-- docs/test-runs/$($runContext.RunId)/reports/UI兼容性测试报告.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI兼容性测试报告.md
 
 ## 正文/核心内容
 - 测试批次：$($runContext.RunId)
@@ -128,12 +128,12 @@ UI 兼容性执行
 UI 自动化执行
 
 ## 输入文件
-- docs/cases/功能测试用例-评审版.md
-- docs/test-runs/$($runContext.RunId)/reports/UI自动化覆盖矩阵.md
-- docs/test-runs/$($runContext.RunId)/reports/UI自动化测试报告.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/功能测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI自动化覆盖矩阵.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI自动化测试报告.md
 
 ## 产出文件
-- docs/test-runs/$($runContext.RunId)/defects/UI缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/UI缺陷清单.md
 
 ## 正文/核心内容
 - 测试批次：$($runContext.RunId)
@@ -142,9 +142,9 @@ UI 自动化执行
 - 失败用例数：$defectCount
 - 结论摘要：$defectSummary
 - 证据入口：
-  - docs/test-runs/$($runContext.RunId)/reports/UI自动化测试报告.md
-  - tests/ui/reports/html/
-  - tests/ui/reports/raw/result.json
+  - projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/UI自动化测试报告.md
+  - projects/$env:TEST_SYSTEM_ID/tests/ui/reports/html/
+  - projects/$env:TEST_SYSTEM_ID/tests/ui/reports/raw/result.json
 
 ## 缺陷明细
 $defectRows
@@ -193,8 +193,18 @@ function Write-StageResult {
 }
 
 $env:TEST_RUN_ID = $runContext.RunId
+
+# 从 system.yaml 加载系统配置
+$systemConfig = Get-SystemConfig
+
 if (-not $env:BASE_URL) {
-    $env:BASE_URL = "http://192.168.2.97:6089"
+    if ($systemConfig.UiBaseUrl) {
+        $env:BASE_URL = $systemConfig.UiBaseUrl
+    } elseif ($systemConfig.BaseUrl) {
+        $env:BASE_URL = $systemConfig.BaseUrl
+    } else {
+        $env:BASE_URL = "http://192.168.2.97:6089"
+    }
 }
 
 if ($ForceNotExecutedReason) {
@@ -306,9 +316,9 @@ npm run test -- --project=chromium --workers=1
 $exitCode = $LASTEXITCODE
 
 $evidence = @(
-    "tests/ui/reports",
-    "tests/ui/reports/html",
-    "tests/ui/reports/raw/result.json"
+    "projects/$env:TEST_SYSTEM_ID/tests/ui/reports",
+    "projects/$env:TEST_SYSTEM_ID/tests/ui/reports/html",
+    "projects/$env:TEST_SYSTEM_ID/tests/ui/reports/raw/result.json"
 )
 
 if ($exitCode -eq 0) {

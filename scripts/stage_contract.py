@@ -287,14 +287,15 @@ def write_stage_status(run_id: str | None, payload: dict[str, Any], system_id: s
     if not run_id:
         return None
 
-    # 优先读 TEST_RUN_DIR 环境变量（多系统隔离），否则用默认 docs/test-runs/<run_id>
+    # 优先读 TEST_RUN_DIR 环境变量（多系统隔离），否则用默认 projects/<system>/test-runs/<run_id>
     run_dir_env = os.environ.get("TEST_RUN_DIR")
     if run_dir_env:
         run_dir = Path(run_dir_env)
         if not run_dir.is_absolute():
             run_dir = ROOT / run_dir
     else:
-        run_dir = ROOT / "docs" / "test-runs" / run_id
+        system = system_id or os.environ.get("TEST_SYSTEM_ID", "crm")
+        run_dir = ROOT / "projects" / system / "test-runs" / run_id
 
     status_dir = run_dir / "stage-status"
     status_dir.mkdir(parents=True, exist_ok=True)

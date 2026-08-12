@@ -1,0 +1,61 @@
+# HR 人力资源系统 - 第二被测系统示例
+# =============================================================================
+# 本文件演示如何零代码接入第二个被测系统。
+# 只需 3 步：
+#   1. 复制本目录 projects/hr-demo/，修改 system.yaml 配置
+#   2. 在 tests/api/testsuites/hr-demo/ 下放 API 测试代码
+#      在 tests/ui/specs/hr-demo/ 下放 UI 测试代码
+#   3. 执行: bash scripts/run-full-test-flow.sh --system hr-demo
+# 框架会自动按本文件的 tests_dir 隔离测试，与 CRM 完全独立，无冲突。
+# =============================================================================
+
+id: hr-demo
+name: HR 人力资源系统 (示例)
+
+# ------- 协议声明 -------
+protocols:
+  default:
+    type: http
+    config:
+      base_url: "http://192.168.2.97:7080"   # 第二被测系统地址（示例）
+      api_base_path: "/api/v1"
+      timeout: 30
+
+# ------- 认证声明 -------
+auth:
+  type: jwt
+  config:
+    login_path: "/api/v1/auth/login"
+    token_field: "token"
+    token_type: "Bearer"
+    username_field: "username"
+    password_field: "password"
+    password_encryption: "none"              # HR 系统不加密密码（示例）
+
+# ------- 测试范围声明 -------
+test_scope:
+  api:
+    enabled: true
+    # 关键：tests_dir 指向 hr-demo 专属子目录，与 CRM 隔离
+    tests_dir: "tests/api/testsuites/hr-demo"
+    smoke_marker: "smoke"
+  ui:
+    enabled: true
+    # 关键：tests_dir 指向 hr-demo 专属子目录，与 CRM 隔离
+    tests_dir: "tests/ui/specs/hr-demo"
+    base_url: "http://192.168.2.97:7080"
+    global_setup: "tests/ui/global-setup.ts"
+  performance:
+    enabled: false                            # HR 系统暂不做性能测试（示例）
+    tests_dir: "tests/performance/locust/hr-demo"
+  security:
+    enabled: false                            # HR 系统暂不做安全测试（示例）
+    tests_dir: "tests/security/hr-demo"
+    target_url: "http://192.168.2.97:7080"
+
+# ------- 路径映射 -------
+paths:
+  test_cases: "docs/cases"
+  test_data: "tests/data"
+  env_file: ".env"
+  output_dir: "docs/test-runs"

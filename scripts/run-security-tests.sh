@@ -1,43 +1,28 @@
 #!/usr/bin/env bash
 # ============================================================================
-# 安全测试 - Linux 原生执行脚本
+# 安全测试 - 通用执行脚本
 # 用法: ./scripts/run-security-tests.sh
 # 环境: 需要 Python 3.10+
+# 配置: 从 projects/<system>/system.yaml 动态读取，无需修改脚本
 # ============================================================================
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SEC_DIR="$ROOT/tests/security"
 
-# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
-SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+# ---------- 加载共享库 ----------
+# shellcheck disable=SC1090
+source "$ROOT/shared/lib/test_framework.sh"
 
-# ---------- 颜色输出 ----------
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# ---------- 加载 system.yaml 配置 ----------
+load_system_config "$ROOT" "${TEST_SYSTEM_ID:-crm}"
 
-log_info()  { echo -e "${CYAN}[INFO]${NC} $*"; }
-log_ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
-log_warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
+# ---------- 从 system.yaml 获取配置 ----------
+SEC_DIR="$ROOT/$(get_tests_dir security "tests/security")"
+SEC_TARGET_URL="${SEC_TARGET_URL:-$(get_api_base_url "http://192.168.2.97:6089")}"
 
 # ---------- Python 检查 ----------
-PYTHON_BIN="python3"
-if ! command -v $PYTHON_BIN &>/dev/null; then
-    PYTHON_BIN="python"
-fi
-
-if ! command -v $PYTHON_BIN &>/dev/null; then
-    log_error "Python 未找到，请安装 Python 3.10+"
-    exit 1
-fi
-
-# ---------- 环境变量 ----------
-export API_BASE_URL="${API_BASE_URL:-http://192.168.2.97:6089/prod-api}"
+detect_python || exit 1
 
 # ---------- 检查安全扫描器 ----------
 if [ ! -d "$SEC_DIR" ]; then
@@ -56,7 +41,9 @@ fi
 log_info "============================================"
 log_info "安全测试扫描"
 log_info "============================================"
-log_info "目标: $API_BASE_URL"
+log_info "系统:       ${SYS_ID:-crm}"
+log_info "目标:       $SEC_TARGET_URL"
+log_info "扫描器目录: $SEC_DIR"
 log_info ""
 
 cd "$SEC_DIR"
@@ -78,7 +65,7 @@ sys.path.insert(0, '$SEC_DIR')
 from scanner.security_scanner import SecurityScanner
 import json
 
-scanner = SecurityScanner(base_url='$API_BASE_URL')
+scanner = SecurityScanner(base_url='$SEC_TARGET_URL')
 results = scanner.run()
 print(json.dumps(results, indent=2, ensure_ascii=False))
 " 2>&1 | tee "$REPORT_FILE"

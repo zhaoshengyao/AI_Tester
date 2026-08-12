@@ -154,7 +154,7 @@ function Write-PerfDocuments {
 
 ## 输入文件
 
-- docs/cases/性能测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/性能测试用例-评审版.md
 
 - scripts/run-perf-tests.ps1
 
@@ -164,11 +164,11 @@ function Write-PerfDocuments {
 
 ## 产出文件
 
-- tests/performance/results/
+- projects/$env:TEST_SYSTEM_ID/tests/performance/results/
 
-- docs/test-runs/$($runContext.RunId)/reports/性能测试报告.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/性能测试报告.md
 
-- docs/test-runs/$($runContext.RunId)/defects/性能缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/性能缺陷清单.md
 
 
 
@@ -262,15 +262,15 @@ function Write-PerfDocuments {
 
 ## 输入文件
 
-- docs/cases/性能测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/性能测试用例-评审版.md
 
-- docs/test-runs/$($runContext.RunId)/reports/性能测试报告.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/性能测试报告.md
 
 
 
 ## 产出文件
 
-- docs/test-runs/$($runContext.RunId)/defects/性能缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/性能缺陷清单.md
 
 
 
@@ -288,7 +288,7 @@ function Write-PerfDocuments {
 
 - 证据入口：
 
-  - docs/test-runs/$($runContext.RunId)/reports/性能测试报告.md
+  - projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/性能测试报告.md
 
   - $resultDir
 

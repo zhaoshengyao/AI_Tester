@@ -4,17 +4,17 @@ driver_type: skill
 required_inputs:
   - name: test-plan-docs
     paths:
-      - docs/test-plan/测试方案.md
-      - docs/test-plan/测试计划.md
+      - projects/{system}/docs/test-plan/测试方案.md
+      - projects/{system}/docs/test-plan/测试计划.md
     match: all
     path_type: file
 required_outputs:
   - name: generated-cases
     paths:
-      - docs/cases/功能测试用例.md
-      - docs/cases/接口测试用例.md
-      - docs/cases/性能测试用例.md
-      - docs/cases/安全测试用例.md
+      - projects/{system}/docs/cases/功能测试用例.md
+      - projects/{system}/docs/cases/接口测试用例.md
+      - projects/{system}/docs/cases/性能测试用例.md
+      - projects/{system}/docs/cases/安全测试用例.md
     match: all
     path_type: file
 required_gates: []

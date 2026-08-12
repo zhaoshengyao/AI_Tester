@@ -1,0 +1,139 @@
+============================= test session starts =============================
+collecting ... collected 75 items
+
+tests/api/ipd/test_auth_login.py::test_login_success_6_params_match_expected_conftest PASSED
+tests/api/ipd/test_auth_login.py::test_login_wrong_password_returns_500_msg_contains_keyword PASSED
+tests/api/ipd/test_auth_login.py::test_login_underscore_clientid_must_fail_camel_required PASSED
+tests/api/ipd/test_auth_login.py::test_login_underscore_granttype_must_fail_camel_required PASSED
+tests/api/ipd/test_auth_login.py::test_login_missing_tenantid_records_real_response_no_stack [INFO API-AUTH-005] 缺 tenantId 真实 code=200 msg=操作成功
+PASSED
+tests/api/ipd/test_auth_login.py::test_login_invalid_granttype_5_values_all_fail PASSED
+tests/api/ipd/test_auth_login.py::test_auth_code_captcha_disabled PASSED
+tests/api/ipd/test_auth_login.py::test_logout_post_invalidates_token [INFO sanity] GET /auth/logout HTTP=200（预期 405，不做断言）
+[INFO API-AUTH-009] logout 业务 code=200 msg=退出成功
+[INFO 非缺陷] JWT 默认到 exp 过期（常见实现），登出未立即拉入黑名单。不算缺陷。
+PASSED
+tests/api/ipd/test_user.py::test_user_profile_manager_name_and_role PASSED
+tests/api/ipd/test_user.py::test_jwt_userid_matches_profile_numeric_value [INFO API-USER-009] 类型差异 JWT=int vs profile=str，但数值相同 int=2085605430614978561；登记知识库：类型不一致但值相同（非缺陷）。
+PASSED
+tests/api/ipd/test_user.py::test_menu_routers_3_first_level_titles PASSED
+tests/api/ipd/test_user.py::test_project_manager_dept_role_menu_build_are_403_REP01 PASSED
+tests/api/ipd/test_user.py::test_dict_sys_yes_no_has_2_items PASSED
+tests/api/ipd/test_user.py::test_dict_common_status_empty_array_ok PASSED
+tests/api/ipd/test_user.py::test_user_list_total_16_paginated [INFO API-USER-008] user/list 单行字段 keys=['avatar', 'createTime', 'deptId', 'deptName', 'email', 'loginCid', 'loginDate', 'loginIp', 'nickName', 'phonenumber', 'postIds', 'remark', 'roleId', 'roleIds', 'roles', 'sex', 'status', 'tenantId', 'userId', 'userName', 'userType']（给 R4 合规判断用）
+PASSED
+tests/api/ipd/test_user.py::test_dashboard_without_token_returns_401_or_403 PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_project_page_pagenum_negative_no_sql_stack PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_project_page_pagesize_0_no_divide_by_zero PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_project_page_pagenum_99_has_empty_rows [接口契约/实现一致性缺陷 API-004 分页参数未生效] project/page 接口：
+  请求 pageNum=99 pageSize=10；实际返回 rows.len=6，total=6
+  预期 rows=[]（页码超过 ceil(total/10) 时），实现可能忽略 pageNum/pageSize 或 未做偏移处理。
+缺陷分类=接口契约/实现一致性（不判失败，按 AGENTS.md 直接登记缺陷）。
+PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_project_page_invalid_type_should_not_500 PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_risk_list_filter_level_high PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_risk_list_filter_medium_A3_tri_state [接口契约/实现一致性缺陷 API-003-A3（AMB-01 状态2/3）] dashboard/riskStats 与 risk/list level 聚合不一致（=口径差风险）：
+  riskStats 统计（总览口径）= {'high': 3, 'medium': 1, 'low': 0}
+  risk/list 默认聚合（列表明细口径） = {'high': 3, 'medium': 0, 'low': 0}
+  风险：riskStats 有 medium=1 但 risk/list 仅 medium=0，可能是：① list 按项目范围/用户权限过滤，总览未按同口径 或 ② 有 medium 风险项目 list 对赵经理不可见。
+  补充证据（不同参数的 risk/list） = [({}, 3, {'high': 3, 'medium': 0, 'low': 0}), ({'level': 'medium'}, 0, {'high': 0, 'medium': 0, 'low': 0}), ({'level': 'high'}, 3, {'high': 3, 'medium': 0, 'low': 0}), ({'level': 'low'}, 0, {'high': 0, 'medium': 0, 'low': 0})]
+ → 缺陷分类=接口契约/实现一致性。移交研发澄清：riskStats 与 risk/list 的过滤口径（全量/本人）是否应保持一致。
+PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_change_list_missing_projectid_no_stack PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_change_list_with_projectid_ok PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_wf_definition_filter_category_param_matrix_R10 [接口契约/实现一致性缺陷 API-005 R10(AMB-03)] workflow/definition/list 分类过滤未生效：
+  被测参数名集合（categoryId/category_id/category）全部传值 cat_id=2099000000000000001 后，
+  返回 total 仍=23（全量），或 rows 全部与分类名无匹配。
+  → 两种可能：① 实际生效参数名并非上述 3 个（遗漏未测，属于接口契约/文档一致性——文档名与实现名不符）；或 ② 该接口完全不支持按分类过滤（属于功能缺失 = 实现一致性缺陷）。  → 按 AGENTS.md 不直接断言 fail，登记缺陷移交研发确认实际支持的过滤参数名或功能范围。缺陷分类=接口契约/实现一致性。
+PASSED
+tests/api/ipd/test_readonly_boundary_filters.py::test_wf_definition_last_page_has_3_rows PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_dashboard_overview_structure_4_top_keys PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_dashboard_3_consecutive_requests_values_identical PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_project_list_array_data_5_items PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_project_page_structure_total_rows_top_level PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_project_detail_circuit_monitor_27_fields PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_project_detail_not_exists_no_sql_stack PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_project_filter_type_hardware_3_software_2 PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_risk_list_3_high_level_items PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_riskrule_list_5_predefined [接口契约/文档一致性缺陷 API-001] riskRule/5 条 ruleCode 与需求分析预测不一致。
+  需求分析原预测名=['BUDGET_WARN', 'PROGRESS_STALE', 'RISK_CASCADE', 'SCHEDULE_WARN', 'TEAM_SIZE']
+  真实实现 ruleCode   =['BUDGET_CRITICAL', 'BUDGET_WARN', 'MILESTONE_CRITICAL', 'MILESTONE_WARN', 'TASK_DELAY']
+  预测中不存在的=实际实现: ['BUDGET_CRITICAL', 'MILESTONE_CRITICAL', 'MILESTONE_WARN', 'TASK_DELAY']
+  预测中存在而实现没有: ['PROGRESS_STALE', 'RISK_CASCADE', 'SCHEDULE_WARN', 'TEAM_SIZE']
+  → 缺陷类型登记为【接口契约/文档一致性缺陷】，不是实现失败，需产品/研发确认最终命名。
+PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_riskrule_1_budget_warn_trigger_90 PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_budget_list_3_items PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_document_list_3_items_fileurl_not_null PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_workflow_category_11_items_3_level_nested PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_workflow_definition_total_23 PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A1_stats_total_eq_list_len PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A2_type_distribution_matches_project_list_grouping PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A3_risk_stats_levels_match_global_risk_list [接口契约/实现一致性缺陷 API-003-A3（AMB-01 状态2/3）] dashboard/riskStats 与 risk/list level 聚合不一致（=口径差风险）：
+  riskStats 统计（总览口径）= {'high': 3, 'medium': 1, 'low': 0}
+  risk/list 默认聚合（列表明细口径） = {'high': 3, 'medium': 0, 'low': 0}
+  风险：riskStats 有 medium=1 但 risk/list 仅 medium=0，可能是：① list 按项目范围/用户权限过滤，总览未按同口径 或 ② 有 medium 风险项目 list 对赵经理不可见。
+  补充证据（不同参数的 risk/list） = [({}, 3, {'high': 3, 'medium': 0, 'low': 0}), ({'level': 'medium'}, 0, {'high': 0, 'medium': 0, 'low': 0}), ({'level': 'high'}, 3, {'high': 3, 'medium': 0, 'low': 0}), ({'level': 'low'}, 0, {'high': 0, 'medium': 0, 'low': 0})]
+ → 缺陷分类=接口契约/实现一致性。移交研发澄清：riskStats 与 risk/list 的过滤口径（全量/本人）是否应保持一致。
+PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A4_risk_projects_matches_progress_risklevel_mh_status_not_closed PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A5_doc_groupby_projectid_matches_project_5_items PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A6_list_len_equals_page_total PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A7_user_list_pages_rows_sum_equals_total PASSED
+tests/api/ipd/test_project_risk_wf_consistency.py::test_consistency_A8_wf_definition_categoryname_foreignkey_in_category_table PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_status_001_all_8_projects_status_in_enum PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_status_002_status_distribution_coverage_ge_2 [INFO PM-STATUS-002 分布] status 分布 = {'approved': 17, 'draft': 11, 'pending': 2}；distinct 状态种类 = 3（≥ 2 视为流转覆盖样本足够）
+PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_phase_003_all_8_projects_phase_in_enum PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_phase_004_phase_distribution_ge_2 [INFO PM-PHASE-004 分布] phase 分布 = {'closed': 11, 'concept': 14, 'plan': 4, 'development': 1}；distinct 阶段种类 = 4
+PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_detail_005_list_and_detail_consistency_name_status_phase PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_enum_006_status_set_matches_baseline [PASS ENUM-006] status 本次 ['approved', 'draft', 'pending'] 全部在基线 ['approved', 'draft', 'pending'] 集合中。
+PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_enum_007_phase_set_matches_baseline [PASS ENUM-007] phase 本次 ['closed', 'concept', 'development', 'plan'] 全部在基线 ['closed', 'concept', 'development', 'plan'] 集合中。
+PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestProjectStageAndStatusSemiAuto::test_pm_flow_008_entrypoints_not_500_crash PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestDashboardRoleConsistencyA4A7::test_cons_A4_boss_total_ge_manager_total [INFO CONS-A4] boss stats.total=30 vs manager=6
+PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestDashboardRoleConsistencyA4A7::test_cons_A5_stats_inprogress_completed_pending_sum_equals_total [INFO CONS-A5 老板] sum(['inProgress', 'completed', 'pendingAcceptance']) = 30 vs total=30 → |diff|=0
+[INFO CONS-A5 经理] sum(['inProgress', 'completed', 'pendingAcceptance']) = 6 vs total=6 → |diff|=0
+PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestDashboardRoleConsistencyA4A7::test_cons_A6_boss_type_distribution_sum_counts_eq_total [INFO CONS-A6 老板] 类型分布 counts_sum=30 vs stats.total=30；pct_sum=100.0%
+PASSED
+tests/api/ipd/test_project_stage_semi_auto.py::TestDashboardRoleConsistencyA4A7::test_cons_A7_boss_risk_projects_ge_manager [INFO CONS-A7] boss riskProjects=2 vs manager=2
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR01_CREATE::test_wr01_create_success [WR01 SUCCESS] pid=2087416041007173633 code=WR01-20260812134902-E6BC
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR02_REQUIRED::test_wr02_missing_project_name PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR03_DUPLICATE_CODE::test_wr03_dup_code [WR-03 OK] 重复 projectCode=WR01-20260812134902-E6BC 后端 biz_code=500 msg=项目编号已存在
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR04_UPDATE::test_wr04_update_name_budget [WR-04] UPDATE 验证通过 ✅ projectName='[WR04-UPDATED] [WR01]软件研发项目 20260812134902' budget=999.00
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR05_STATUS_DRAFT_PENDING::test_wr05_submit_approval PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR06_STATUS_PENDING_APPROVED::test_wr06_approve PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR07_PHASE_CONCEPT_PLAN::test_wr07_phase_advance [WR07] phase 已是 plan（approve 自动推进），无需额外操作
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR08_PHASE_PLAN_DEV::test_wr08_phase_plan_dev PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR09_PHASE_DEV_CLOSED::test_wr09_close PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR10_SOFT_DELETE::test_wr10_soft_delete [WR10] 创建 draft 项目 pid=2087416042785558530 code=WR10-DEL-20260812134902
+[WR-10] 删除后 GET page 搜不到 code=WR10-DEL-20260812134902，删除有效 ✅
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR11_IDOR_WRITE::test_wr11_manager_cannot_write_boss_closed [接口契约/权限一致性缺陷 WR-11-HIGH] 赵经理POST /idmp/project/approve/2087416041007173633 返回 code=200！可能为 IDOR 高危越权写！resp={"code": 200, "msg": "操作成功", "data": null}
+[接口契约/权限一致性缺陷 WR-11-HIGH] 赵经理POST /idmp/project/phase/2087416041007173633?toPhase=closed 返回 code=200！可能为 IDOR 高危越权写！resp={"code": 200, "msg": "操作成功", "data": null}
+[WR11] attempt log: [{"method": "PUT", "path": "/idmp/project", "HTTP": 200, "biz_code": 500}, {"method": "POST", "path": "/idmp/project/submit/2087416041007173633", "HTTP": 200, "biz_code": 500}, {"method": "POST", "path": "/idmp/project/approve/2087416041007173633", "HTTP": 200, "biz_code": 200}, {"method": "POST", "path": "/idmp/project/phase/2087416041007173633?toPhase=closed", "HTTP": 200, "biz_code": 200}, {"method": "PUT", "path": "/idmp/project/2087416041007173633", "HTTP": 200, "biz_code": 405}, {"method": "DELETE", "path": "/idmp/project/2087416041007173633", "HTTP": 200, "biz_code": 500}]
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR12_REJECT_PENDING_TO_DRAFT::test_wr12_reject_status_to_draft [WR-12] 驳回审批验证通过 ✅ status=pending→draft 成功
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR13_PHASE_BACK_PLAN_TO_CONCEPT::test_wr13_phase_back_to_concept [WR-13] 阶段回退验证通过 ✅ phase=plan→concept 成功
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR14_BUDGET_VALIDATION::test_wr14_budget_null_negative_empty [接口契约/业务校验一致性缺陷 WR-14] CREATE budget=null(budget未传字段) 返回 code=200 未拦截（预算未做非空/非负数校验）
+[接口契约/业务校验一致性缺陷 WR-14] CREATE budget=negative(budget=-999负数) 返回 code=200 未拦截（预算未做非空/非负数校验）
+[接口契约/业务校验一致性缺陷 WR-14] CREATE budget=empty_str(budget=''空字符串) 返回 code=200 未拦截（预算未做非空/非负数校验）
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR15_MANAGERID_REQUIRED::test_wr15_managerid_null_zero [接口契约/业务校验一致性缺陷 WR-15] CREATE managerId=null(managerId未传字段) 返回 code=200 未拦截（负责人未做非空校验）
+[接口契约/业务校验一致性缺陷 WR-15] CREATE managerId=zero(managerId=0) 返回 code=200 未拦截（负责人未做非空校验）
+PASSED
+
+============================= 75 passed in 9.72s ==============================
+
+===== STDERR =====

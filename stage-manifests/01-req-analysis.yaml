@@ -4,15 +4,15 @@ driver_type: skill
 required_inputs:
   - name: requirements-or-prototype-or-api
     paths:
-      - docs/requirements
-      - docs/prototype
-      - docs/api
+      - projects/{system}/docs/requirements
+      - projects/{system}/docs/prototype
+      - projects/{system}/docs/api
     match: any
     path_type: dir
 required_outputs:
   - name: analysis-report
     paths:
-      - docs/analysis/需求分析报告.md
+      - projects/{system}/docs/analysis/需求分析报告.md
     match: all
     path_type: file
 required_gates:

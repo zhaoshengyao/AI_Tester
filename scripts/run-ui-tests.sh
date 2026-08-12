@@ -1,29 +1,28 @@
 #!/usr/bin/env bash
 # ============================================================================
-# UI 自动化测试 - Linux 原生执行脚本
-# 用法: ./scripts/run-ui-tests.sh
+# UI 自动化测试 - 通用执行脚本
+# 用法: ./scripts/run-ui-tests.sh [MODE]
+#   MODE: smoke | full (默认 full)
 # 环境: 需要 Node.js 18+, npm, Playwright browsers
+# 配置: 从 projects/<system>/system.yaml 动态读取，无需修改脚本
 # ============================================================================
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-UI_DIR="$ROOT/tests/ui"
+MODE="${1:-full}"
 
-# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
-SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+# ---------- 加载共享库 ----------
+# shellcheck disable=SC1090
+source "$ROOT/shared/lib/test_framework.sh"
 
-# ---------- 颜色输出 ----------
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# ---------- 加载 system.yaml 配置 ----------
+load_system_config "$ROOT" "${TEST_SYSTEM_ID:-crm}"
 
-log_info()  { echo -e "${CYAN}[INFO]${NC} $*"; }
-log_ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
-log_warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
+# ---------- 从 system.yaml 获取配置 ----------
+UI_TESTS_BASE="$ROOT/$(get_tests_dir ui "tests/ui/specs")"
+# UI 测试项目根目录：假设 tests_dir 指向 specs 目录，其父目录为 UI 项目根
+UI_DIR="$(dirname "$UI_TESTS_BASE")"
 
 # ---------- Node.js 检查 ----------
 if ! command -v node &>/dev/null; then
@@ -54,7 +53,7 @@ else
     log_ok "依赖已就绪 (node_modules 存在)"
 fi
 
-# ---------- 检查系统依赖（关键！）----------
+# ---------- 检查系统依赖 ----------
 log_info "检查 Playwright 系统依赖..."
 MISSING_DEPS=()
 
@@ -78,10 +77,8 @@ if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
     log_warn "检测到缺失的系统依赖，尝试安装..."
     log_info "正在安装 mesa-libgbm 等依赖..."
     
-    # openEuler/CentOS 系统
     if command -v yum &>/dev/null; then
         yum install -y mesa-libgbm mesa-libgbm-devel 2>&1 | tail -3
-    # Ubuntu/Debian 系统
     elif command -v apt-get &>/dev/null; then
         apt-get update -qq && apt-get install -y libgbm1 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libpango-1.0-0 libasound2 2>&1 | tail -3
     fi
@@ -108,9 +105,11 @@ fi
 log_info "============================================"
 log_info "UI 自动化测试 (Playwright)"
 log_info "============================================"
-log_info "项目目录: $UI_DIR"
-log_info "系统:     $SYSTEM_ID"
-log_info "浏览器:   Chromium"
+log_info "系统:       ${SYS_ID:-crm}"
+log_info "项目目录:   $UI_DIR"
+log_info "测试目录:   $UI_TESTS_BASE"
+log_info "模式:       $MODE"
+log_info "浏览器:     Chromium"
 log_info ""
 
 START_TIME=$(date +%s)
@@ -128,10 +127,18 @@ else
     PW_RESULTS_DIR="$UI_DIR/test-results"
 fi
 
-# 支持参数: smoke 模式或全量
-if [ "${1:-}" = "smoke" ]; then
-    log_info "执行模式: 冒烟测试 (仅 crm-smoke)"
-    npx playwright test specs/crm/crm-smoke.spec.ts \
+# 获取冒烟测试 spec 文件路径（从 system.yaml 或使用默认）
+# UI_TESTS_DIR 是 ROOT 相对路径 (如 tests/ui/specs/crm)，
+# 当前工作目录是 UI_DIR (ROOT/tests/ui)，所以需要转换为 UI_DIR 相对路径
+SMOKE_SPEC="specs/crm/crm-smoke.spec.ts"
+if [ -n "${UI_TESTS_DIR:-}" ]; then
+    REL_TESTS_DIR="${UI_TESTS_DIR#tests/ui/}"
+    SMOKE_SPEC="${REL_TESTS_DIR}/crm-smoke.spec.ts"
+fi
+
+if [ "$MODE" = "smoke" ]; then
+    log_info "执行模式: 冒烟测试 ($SMOKE_SPEC)"
+    npx playwright test "$SMOKE_SPEC" \
         --reporter=html,json \
         --output="$PW_RESULTS_DIR" \
         2>&1 | tee "$PW_JSON_FILE"
@@ -166,12 +173,7 @@ log_info "HTML 报告: $HTML_REPORT"
 log_info "JSON 报告: $JSON_REPORT"
 
 # ---------- 归档报告 ----------
-# 优先用 TEST_RUN_DIR（由 run-full-test-flow.sh 注入），避免并行时 ls -dt 找到错误批次
-if [ -n "${TEST_RUN_DIR:-}" ]; then
-    BATCH_DIR="$TEST_RUN_DIR"
-else
-    BATCH_DIR=$(ls -dt "$ROOT/docs/test-runs"/*/ 2>/dev/null | head -1)
-fi
+BATCH_DIR=$(get_batch_dir "$ROOT")
 if [ -n "$BATCH_DIR" ]; then
     mkdir -p "$BATCH_DIR/reports" "$BATCH_DIR/defects"
     REPORT_MD="$BATCH_DIR/reports/UI自动化测试报告.md"
@@ -184,19 +186,22 @@ if [ -n "$BATCH_DIR" ]; then
         echo ""
         echo "## 输入文件"
         echo "- scripts/run-ui-tests.sh"
+        echo "- projects/${SYS_ID:-crm}/system.yaml"
         echo ""
         echo "## 产出文件"
         echo "- tests/ui/reports/"
         echo "- $REPORT_MD"
         echo ""
         echo "## 正文/核心内容"
-        echo "- 执行模式：${1:-full}"
+        echo "- 执行模式：$MODE"
+        echo "- 系统：${SYS_ID:-crm}"
+        echo "- 测试目录：$UI_TESTS_BASE"
         echo "- 执行耗时：${DURATION}s"
         echo "- 退出码：$EXIT_CODE"
-        echo "- 执行命令: npx playwright test ${1:-}"
+        echo "- 执行命令: npx playwright test $MODE"
         echo "- 原始结果路径："
-        echo "  - tests/ui/reports/html/index.html"
-        echo "  - tests/ui/reports/raw/result.json"
+        echo "  - $HTML_REPORT"
+        echo "  - $JSON_REPORT"
         echo ""
         echo "## 执行结论"
         if [ $EXIT_CODE -eq 0 ]; then

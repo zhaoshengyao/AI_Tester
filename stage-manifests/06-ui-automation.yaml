@@ -4,36 +4,36 @@ driver_type: script
 required_inputs:
   - name: reviewed-ui-case
     paths:
-      - docs/cases/功能测试用例-评审版.md
+      - projects/{system}/docs/cases/功能测试用例-评审版.md
     match: all
     path_type: file
 required_outputs:
   - name: ui-raw-report
     paths:
-      - tests/ui/reports
+      - projects/{system}/tests/ui/reports
     match: all
     path_type: dir
   - name: ui-coverage-matrix
     paths:
-      - docs/test-runs/{run_id}/reports/UI自动化覆盖矩阵.md
+      - projects/{system}/test-runs/{run_id}/reports/UI自动化覆盖矩阵.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: ui-formal-report
     paths:
-      - docs/test-runs/{run_id}/reports/UI自动化测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/UI自动化测试报告.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: ui-compat-report
     paths:
-      - docs/test-runs/{run_id}/reports/UI兼容性测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/UI兼容性测试报告.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: ui-defect-doc
     paths:
-      - docs/test-runs/{run_id}/defects/UI缺陷清单.md
+      - projects/{system}/test-runs/{run_id}/defects/UI缺陷清单.md
     match: all
     path_type: file
     must_reference_run_id: true

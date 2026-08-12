@@ -1,0 +1,53 @@
+
+=== 所有按钮 ===
+按钮1: text="新建线索", class=el-button el-button--small is-plain, type=button, visible=true
+按钮2: text="新增跟进", class=el-button el-button--small is-plain, type=button, visible=true
+按钮8: text="新增", class=el-button el-button--primary el-button--default is-plain, type=button, visible=true
+
+=== 新增按钮 ===
+新增按钮存在: true
+新增按钮可见: true
+✅ 已点击新增按钮
+
+=== 查找amis弹窗 ===
+amis弹窗数量: 7
+元素0: class=el-overlay-dialog, visible=false, style=, text="", rect=null
+元素1: class=el-drawer rtl, visible=false, style=width: 300px;, text="", rect=null
+元素2: class=el-overlay-dialog, visible=false, style=, text="", rect=null
+元素3: class=el-overlay-dialog, visible=false, style=, text="", rect=null
+元素4: class=el-overlay-dialog, visible=false, style=, text="", rect=null
+元素5: class=el-overlay-dialog, visible=false, style=, text="", rect=null
+元素6: class=el-overlay-dialog, visible=false, style=, text="", rect=null
+
+=== 查找所有可见的模态框内容 ===
+可见模态框数量: 0
+
+=== 查找所有overlay ===
+overlay数量: 0
+
+=== 查找所有input元素（全局）===
+全局输入框数量: 19
+输入框0: type=text, name=, data-name=, placeholder="", class=el-select__input is-small, parentClass=el-select__selected-item el-select__input-wrapper is-hidden, grandParentClass=el-select__selection
+输入框1: type=text, name=, data-name=, placeholder="搜索客户/线索/商机...", class=el-input__inner, parentClass=el-input__wrapper, grandParentClass=el-input el-input--small el-input-group el-input--suffix search-keyword-input el-input-group--append
+输入框2: type=text, name=, data-name=, placeholder="请输入客户名称", class=el-input__inner, parentClass=el-input__wrapper, grandParentClass=el-input el-input--default el-input--suffix
+输入框3: type=text, name=, data-name=, placeholder="", class=el-select__input is-default, parentClass=el-select__selected-item el-select__input-wrapper is-hidden, grandParentClass=el-select__selection
+输入框4: type=text, name=, data-name=, placeholder="", class=el-select__input is-default, parentClass=el-select__selected-item el-select__input-wrapper is-hidden, grandParentClass=el-select__selection
+输入框5: type=text, name=, data-name=, placeholder="请输入负责人", class=el-input__inner, parentClass=el-input__wrapper, grandParentClass=el-input el-input--default el-input--suffix
+输入框6: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框7: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框8: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框9: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框10: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框11: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框12: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框13: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框14: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框15: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框16: type=checkbox, name=, data-name=, placeholder="", class=el-checkbox__original, parentClass=el-checkbox__input, grandParentClass=el-checkbox el-checkbox--default
+输入框17: type=text, name=, data-name=, placeholder="", class=el-select__input is-default, parentClass=el-select__selected-item el-select__input-wrapper is-hidden, grandParentClass=el-select__selection
+输入框18: type=number, name=, data-name=, placeholder="", class=el-input__inner, parentClass=el-input__wrapper, grandParentClass=el-input el-input--default el-pagination__editor is-in-pagination
+
+=== 查找表单元素 ===
+表单元素数量: 0
+
+✅ 截图已保存

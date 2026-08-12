@@ -1,0 +1,161 @@
+✅ 已点击新增按钮
+✅ 弹窗已出现
+✅ 弹窗截图已保存
+
+弹窗标题: "添加线索"
+✅ 弹窗HTML已保存
+
+=== 表单结构分析 ===
+el-form-item数量: 21
+
+表单项0:
+  label: "姓名"
+  type: input
+  placeholder: "请输入姓名"
+  name: ""
+  data-name: ""
+
+表单项1:
+  label: "公司"
+  type: input
+  placeholder: "请输入公司名称"
+  name: ""
+  data-name: ""
+
+表单项2:
+  label: "部门"
+  type: input
+  placeholder: "请输入部门"
+  name: ""
+  data-name: ""
+
+表单项3:
+  label: "职务"
+  type: input
+  placeholder: "请输入职务"
+  name: ""
+  data-name: ""
+
+表单项4:
+  label: "来源"
+  type: input
+  placeholder: ""
+  name: ""
+  data-name: ""
+
+表单项5:
+  label: "销售线索详情"
+  type: textarea
+  placeholder: "请输入销售线索详情"
+  name: ""
+  data-name: ""
+
+表单项6:
+  label: "电话"
+  type: input
+  placeholder: "请输入电话"
+  name: ""
+  data-name: ""
+
+表单项7:
+  label: "手机"
+  type: input
+  placeholder: "请输入手机号"
+  name: ""
+  data-name: ""
+
+表单项8:
+  label: "邮箱"
+  type: input
+  placeholder: "请输入邮箱"
+  name: ""
+  data-name: ""
+
+表单项9:
+  label: "网站"
+  type: input
+  placeholder: "请输入网址"
+  name: ""
+  data-name: ""
+
+表单项10:
+  label: "外部负责人"
+  type: input
+  placeholder: "请输入外部负责人"
+  name: ""
+  data-name: ""
+
+表单项11:
+  label: "负责人"
+  type: input
+  placeholder: ""
+  name: ""
+  data-name: ""
+
+表单项12:
+  label: "1级行业"
+  type: input
+  placeholder: ""
+  name: ""
+  data-name: ""
+
+表单项13:
+  label: "2级行业"
+  type: input
+  placeholder: ""
+  name: ""
+  data-name: ""
+
+表单项14:
+  label: "地址"
+  type: textarea
+  placeholder: "请输入地址"
+  name: ""
+  data-name: ""
+
+表单项15:
+  label: "市场活动"
+  type: input
+  placeholder: ""
+  name: ""
+  data-name: ""
+
+表单项16:
+  label: "意向程度"
+  type: unknown
+  placeholder: ""
+  name: ""
+  data-name: ""
+
+表单项17:
+  label: "名片"
+  type: input
+  placeholder: ""
+  name: "file"
+  data-name: ""
+
+表单项18:
+  label: "预计金额"
+  type: input
+  placeholder: ""
+  name: ""
+  data-name: ""
+
+表单项19:
+  label: "下次跟进时间"
+  type: input
+  placeholder: "请选择时间"
+  name: ""
+  data-name: ""
+
+表单项20:
+  label: "备注"
+  type: textarea
+  placeholder: "请输入备注"
+  name: ""
+  data-name: ""
+
+弹窗内按钮数量: 3
+  按钮0: text="", class=el-dialog__headerbtn, visible=true
+  按钮1: text="确 定", class=el-button el-button--primary el-button--default, visible=true
+  按钮2: text="取 消", class=el-button el-button--default, visible=true

@@ -1,0 +1,30 @@
+# 最小化测试系统 - 通用描述文件
+# 该系统仅包含一个简单的 HTTP API，无 UI、无性能、无安全测试需求
+id: minimal-test
+name: 最小化测试系统 (Demo)
+
+protocols:
+  default:
+    type: http
+    config:
+      base_url: "http://httpbin.org" # 公共测试接口
+      timeout: 10
+
+auth:
+  type: none
+  config: {}
+
+test_scope:
+  api:
+    enabled: true
+    # 覆盖默认的 API 测试脚本路径（可选）
+    # tests_dir: "tests/api/testsuites" # 如果不设置，框架会使用通用脚本
+  ui:
+    enabled: false
+  performance:
+    enabled: false
+  security:
+    enabled: false
+
+paths:
+  output_dir: "docs/test-runs"

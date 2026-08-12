@@ -1,5 +1,207 @@
-﻿﻿﻿﻿$Script:ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+$Script:ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $Script:StageContractScript = Join-Path $Script:ProjectRoot "scripts\stage_contract.py"
+
+function Get-SystemConfig {
+    param(
+        [string]$SystemId = $null
+    )
+
+    if (-not $SystemId) {
+        $SystemId = if ($env:TEST_SYSTEM_ID) { $env:TEST_SYSTEM_ID } else { "crm" }
+    }
+
+    $yamlPath = Join-Path $Script:ProjectRoot "projects\$SystemId\system.yaml"
+
+    if (-not (Test-Path -LiteralPath $yamlPath)) {
+        return [pscustomobject]@{
+            SystemId = $SystemId
+            SystemName = $SystemId
+            BaseUrl = ""
+            ApiBasePath = "/prod-api"
+            Timeout = 30
+            AuthType = ""
+            ApiTestsDir = "tests\api\testsuites"
+            UiTestsDir = "tests\ui\specs"
+            PerfTestsDir = "tests\performance\locust"
+            SecTestsDir = "tests\security"
+            ApiEnabled = $true
+            UiEnabled = $true
+            PerfEnabled = $true
+            SecEnabled = $true
+            SmokeMarker = "smoke"
+            UiBaseUrl = ""
+            UiGlobalSetup = ""
+            PerfSmokeUsers = 5
+            PerfSmokeSpawnRate = 1
+            PerfSmokeDuration = "30s"
+            PerfFullUsers = 50
+            PerfFullSpawnRate = 5
+            PerfFullDuration = "120s"
+            SecTargetUrl = ""
+            OutputDir = "docs\test-runs"
+            TestCasesDir = "docs\cases"
+            TestDataDir = "tests\data"
+        }
+    }
+
+    # 尝试使用 ConvertFrom-Yaml，如不可用则用 Python 解析
+    $yamlText = Get-Content -LiteralPath $yamlPath -Raw -Encoding utf8
+    $config = $null
+
+    # 方法1: 使用 PowerShell-Yaml 模块
+    if (Get-Command -Name ConvertFrom-Yaml -ErrorAction SilentlyContinue) {
+        try {
+            $config = $yamlText | ConvertFrom-Yaml -ErrorAction Stop
+        } catch {
+            $config = $null
+        }
+    }
+
+    # 方法2: 使用 Python 解析 yaml (回退方案)
+    if (-not $config) {
+        try {
+            $tmpScript = [System.IO.Path]::GetTempFileName() + ".py"
+            @"
+import yaml, json, sys
+with open(r'$yamlPath') as f:
+    config = yaml.safe_load(f)
+if config is None:
+    config = {}
+print(json.dumps(config, default=str))
+"@ | Set-Content -LiteralPath $tmpScript -Encoding utf8
+            $jsonText = & python $tmpScript 2>$null
+            Remove-Item -LiteralPath $tmpScript -Force -ErrorAction SilentlyContinue
+            if ($LASTEXITCODE -eq 0 -and $jsonText) {
+                $config = $jsonText | ConvertFrom-Json -Depth 20
+            }
+        } catch {
+            $config = $null
+        }
+    }
+
+    if (-not $config) {
+        return [pscustomobject]@{
+                SystemId = $SystemId
+                SystemName = $SystemId
+                BaseUrl = ""
+                ApiBasePath = "/prod-api"
+                Timeout = 30
+                AuthType = ""
+                ApiTestsDir = "tests\api\testsuites"
+                UiTestsDir = "tests\ui\specs"
+                PerfTestsDir = "tests\performance\locust"
+                SecTestsDir = "tests\security"
+                ApiEnabled = $true
+                UiEnabled = $true
+                PerfEnabled = $true
+                SecEnabled = $true
+                SmokeMarker = "smoke"
+                UiBaseUrl = ""
+                UiGlobalSetup = ""
+                PerfSmokeUsers = 5
+                PerfSmokeSpawnRate = 1
+                PerfSmokeDuration = "30s"
+                PerfFullUsers = 50
+                PerfFullSpawnRate = 5
+                PerfFullDuration = "120s"
+                SecTargetUrl = ""
+                OutputDir = "docs\test-runs"
+                TestCasesDir = "docs\cases"
+                TestDataDir = "tests\data"
+            }
+        }
+    }
+
+    # 安全获取嵌套值
+    function Get-YamlValue {
+        param($Obj, [string[]]$Keys, $Default)
+        $current = $Obj
+        foreach ($key in $Keys) {
+            if ($null -eq $current -or -not $current.PSObject.Properties.Name -contains $key) {
+                return $Default
+            }
+            $current = $current.$key
+        }
+        if ($null -eq $current) { return $Default }
+        return $current
+    }
+
+    $protocolDefault = Get-YamlValue -Obj $config -Keys @("protocols", "default") -Default $null
+    $protocolConfig = if ($protocolDefault) { Get-YamlValue -Obj $protocolDefault -Keys @("config") -Default $null } else { $null }
+
+    $baseUrl = if ($protocolConfig) { Get-YamlValue -Obj $protocolConfig -Keys @("base_url") -Default "" } else { "" }
+    $apiBasePath = if ($protocolConfig) { Get-YamlValue -Obj $protocolConfig -Keys @("api_base_path") -Default "/prod-api" } else { "/prod-api" }
+    $timeout = if ($protocolConfig) { [int](Get-YamlValue -Obj $protocolConfig -Keys @("timeout") -Default 30) } else { 30 }
+
+    $authType = Get-YamlValue -Obj $config -Keys @("auth", "type") -Default ""
+
+    $apiScope = Get-YamlValue -Obj $config -Keys @("test_scope", "api") -Default $null
+    $uiScope = Get-YamlValue -Obj $config -Keys @("test_scope", "ui") -Default $null
+    $perfScope = Get-YamlValue -Obj $config -Keys @("test_scope", "performance") -Default $null
+    $secScope = Get-YamlValue -Obj $config -Keys @("test_scope", "security") -Default $null
+
+    $apiEnabled = if ($apiScope) { [bool](Get-YamlValue -Obj $apiScope -Keys @("enabled") -Default $true) } else { $true }
+    $uiEnabled = if ($uiScope) { [bool](Get-YamlValue -Obj $uiScope -Keys @("enabled") -Default $true) } else { $true }
+    $perfEnabled = if ($perfScope) { [bool](Get-YamlValue -Obj $perfScope -Keys @("enabled") -Default $true) } else { $true }
+    $secEnabled = if ($secScope) { [bool](Get-YamlValue -Obj $secScope -Keys @("enabled") -Default $true) } else { $true }
+
+    $apiTestsDir = if ($apiScope) { Get-YamlValue -Obj $apiScope -Keys @("tests_dir") -Default "tests\api\testsuites" } else { "tests\api\testsuites" }
+    $uiTestsDir = if ($uiScope) { Get-YamlValue -Obj $uiScope -Keys @("tests_dir") -Default "tests\ui\specs" } else { "tests\ui\specs" }
+    $perfTestsDir = if ($perfScope) { Get-YamlValue -Obj $perfScope -Keys @("tests_dir") -Default "tests\performance\locust" } else { "tests\performance\locust" }
+    $secTestsDir = if ($secScope) { Get-YamlValue -Obj $secScope -Keys @("tests_dir") -Default "tests\security" } else { "tests\security" }
+
+    $uiBaseUrl = if ($uiScope) { Get-YamlValue -Obj $uiScope -Keys @("base_url") -Default "" } else { "" }
+    $uiGlobalSetup = if ($uiScope) { Get-YamlValue -Obj $uiScope -Keys @("global_setup") -Default "" } else { "" }
+
+    $perfSmoke = if ($perfScope) { Get-YamlValue -Obj $perfScope -Keys @("smoke") -Default $null } else { $null }
+    $perfFull = if ($perfScope) { Get-YamlValue -Obj $perfScope -Keys @("full") -Default $null } else { $null }
+
+    $perfSmokeUsers = if ($perfSmoke) { [int](Get-YamlValue -Obj $perfSmoke -Keys @("users") -Default 5) } else { 5 }
+    $perfSmokeSpawnRate = if ($perfSmoke) { [int](Get-YamlValue -Obj $perfSmoke -Keys @("spawn_rate") -Default 1) } else { 1 }
+    $perfSmokeDuration = if ($perfSmoke) { Get-YamlValue -Obj $perfSmoke -Keys @("duration") -Default "30s" } else { "30s" }
+
+    $perfFullUsers = if ($perfFull) { [int](Get-YamlValue -Obj $perfFull -Keys @("users") -Default 50) } else { 50 }
+    $perfFullSpawnRate = if ($perfFull) { [int](Get-YamlValue -Obj $perfFull -Keys @("spawn_rate") -Default 5) } else { 5 }
+    $perfFullDuration = if ($perfFull) { Get-YamlValue -Obj $perfFull -Keys @("duration") -Default "120s" } else { "120s" }
+
+    $secTargetUrl = if ($secScope) { Get-YamlValue -Obj $secScope -Keys @("target_url") -Default "" } else { "" }
+
+    $paths = Get-YamlValue -Obj $config -Keys @("paths") -Default $null
+    $outputDir = if ($paths) { Get-YamlValue -Obj $paths -Keys @("output_dir") -Default "docs\test-runs" } else { "docs\test-runs" }
+    $testCasesDir = if ($paths) { Get-YamlValue -Obj $paths -Keys @("test_cases") -Default "docs\cases" } else { "docs\cases" }
+    $testDataDir = if ($paths) { Get-YamlValue -Obj $paths -Keys @("test_data") -Default "tests\data" } else { "tests\data" }
+
+    $systemName = Get-YamlValue -Obj $config -Keys @("name") -Default $SystemId
+
+    return [pscustomobject]@{
+        SystemId = $SystemId
+        SystemName = $systemName
+        BaseUrl = $baseUrl
+        ApiBasePath = $apiBasePath
+        Timeout = $timeout
+        AuthType = $authType
+        ApiTestsDir = $apiTestsDir
+        UiTestsDir = $uiTestsDir
+        PerfTestsDir = $perfTestsDir
+        SecTestsDir = $secTestsDir
+        ApiEnabled = $apiEnabled
+        UiEnabled = $uiEnabled
+        PerfEnabled = $perfEnabled
+        SecEnabled = $secEnabled
+        SmokeMarker = "smoke"
+        UiBaseUrl = $uiBaseUrl
+        UiGlobalSetup = $uiGlobalSetup
+        PerfSmokeUsers = $perfSmokeUsers
+        PerfSmokeSpawnRate = $perfSmokeSpawnRate
+        PerfSmokeDuration = $perfSmokeDuration
+        PerfFullUsers = $perfFullUsers
+        PerfFullSpawnRate = $perfFullSpawnRate
+        PerfFullDuration = $perfFullDuration
+        SecTargetUrl = $secTargetUrl
+        OutputDir = $outputDir
+        TestCasesDir = $testCasesDir
+        TestDataDir = $testDataDir
+    }
 
 function New-OutputState {
     param(

@@ -1,0 +1,70 @@
+# IPD 管理系统 - 通用描述文件
+# 任何新系统接入，只需创建/修改此文件，无需修改框架代码。
+# 详细字段说明参考: shared/schemas/system.yaml.schema.example
+
+id: ipd
+name: IPD 管理系统
+
+# ------- 协议声明 -------
+protocols:
+  default:
+    type: http
+    config:
+      base_url: "http://192.168.2.97:6090"
+      api_base_path: "/prod-api"  # 实测确认：接口统一前缀 /prod-api
+      timeout: 30
+
+# ------- 认证声明 -------
+# 实测确认：OAuth2 密码模式，登录接口 /prod-api/auth/login
+# - clientId/grantType 使用驼峰命名（和 CRM 的 client_id/grant_type 下划线不同）
+# - 密码加密：AES-256-ECB，key = client_id 完整 32 字节字符串
+auth:
+  type: oauth2
+  config:
+    grant_type: password
+    grant_type_field: "grantType"   # 实测: 下划线形式被服务端拒绝，必须用 grantType
+    client_id: "e5cd7e4891bf95d1d19206ce24a7b32e"   # 实测确认
+    client_id_field: "clientId"     # 实测: 下划线形式被服务端拒绝，必须用 clientId
+    login_path: "/prod-api/auth/login"   # 实测: /system/login 404；正确是 /auth/login
+    token_field: "access_token"
+    token_type: "Bearer"
+    username_field: "username"
+    password_field: "password"
+    password_encryption: "aes-256-ecb"    # 实测确认：不是 gcm
+    password_encryption_key_source: "client_id_full"  # key = 32B client_id 字符串
+    extra_fields:
+      tenantId: "000000"           # 实测: 必须传租户 ID
+
+# ------- 测试范围声明 -------
+test_scope:
+  api:
+    enabled: true
+    tests_dir: "tests/api/testsuites/ipd"
+    smoke_marker: "smoke"
+  ui:
+    enabled: true
+    tests_dir: "tests/ui/specs/ipd"
+    base_url: "http://192.168.2.97:6090"
+    global_setup: "tests/ui/global-setup.ts"
+  performance:
+    enabled: true
+    tests_dir: "tests/performance/locust"
+    smoke:
+      users: 5
+      spawn_rate: 1
+      duration: "60s"
+    full:
+      users: 50
+      spawn_rate: 5
+      duration: "300s"
+  security:
+    enabled: true
+    tests_dir: "tests/security"
+    target_url: "http://192.168.2.97:6090"
+
+# ------- 路径映射 -------
+paths:
+  test_cases: "docs/cases"
+  test_data: "tests/data"
+  env_file: ".env"
+  output_dir: "test-runs"

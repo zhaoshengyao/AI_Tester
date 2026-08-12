@@ -114,14 +114,14 @@ function Write-SecurityDocuments {
 安全测试执行
 
 ## 输入文件
-- docs/cases/安全测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/安全测试用例-评审版.md
 - scripts/run-security-tests.ps1
 - tests/security/scanner/security_scanner.py
 
 ## 产出文件
-- tests/security/reports/
-- docs/test-runs/$($runContext.RunId)/reports/安全测试报告.md
-- docs/test-runs/$($runContext.RunId)/defects/安全缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/tests/security/reports/
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/安全测试报告.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/安全缺陷清单.md
 
 ## 正文/核心内容
 - 测试批次：$($runContext.RunId)
@@ -161,11 +161,11 @@ $evidenceText
 安全测试执行
 
 ## 输入文件
-- docs/cases/安全测试用例-评审版.md
-- docs/test-runs/$($runContext.RunId)/reports/安全测试报告.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/安全测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/安全测试报告.md
 
 ## 产出文件
-- docs/test-runs/$($runContext.RunId)/defects/安全缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/安全缺陷清单.md
 
 ## 正文/核心内容
 - 测试批次：$($runContext.RunId)

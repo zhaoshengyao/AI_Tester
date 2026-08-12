@@ -4,14 +4,14 @@ driver_type: skill
 required_inputs:
   - name: analysis-report
     paths:
-      - docs/analysis/需求分析报告.md
+      - projects/{system}/docs/analysis/需求分析报告.md
     match: all
     path_type: file
 required_outputs:
   - name: test-plan-docs
     paths:
-      - docs/test-plan/测试方案.md
-      - docs/test-plan/测试计划.md
+      - projects/{system}/docs/test-plan/测试方案.md
+      - projects/{system}/docs/test-plan/测试计划.md
     match: all
     path_type: file
 required_gates: []

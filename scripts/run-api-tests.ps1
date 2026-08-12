@@ -1,4 +1,4 @@
-﻿﻿﻿﻿param(
+﻿﻿﻿﻿﻿param(
     [ValidateSet("smoke", "full", "failed-retest")]
     [string]$Mode = "full",
     [int]$RequestTimeoutSeconds = 10,
@@ -39,9 +39,9 @@ function Write-ApiDocuments {
     )
 
     $rawPaths = @(
-        "tests/api/reports/html/report.html",
-        "tests/api/reports/junit/report.xml",
-        "tests/api/reports/raw/api-test.log"
+        "projects/$env:TEST_SYSTEM_ID/tests/api/reports/html/report.html",
+        "projects/$env:TEST_SYSTEM_ID/tests/api/reports/junit/report.xml",
+        "projects/$env:TEST_SYSTEM_ID/tests/api/reports/raw/api-test.log"
     )
 
     @"
@@ -51,14 +51,14 @@ function Write-ApiDocuments {
 接口自动化执行
 
 ## 输入文件
-- docs/cases/接口测试用例-评审版.md
-- docs/test-runs/$($runContext.RunId)/reports/API自动化覆盖矩阵.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/接口测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/API自动化覆盖矩阵.md
 - scripts/run-api-tests.ps1
 
 ## 产出文件
-- tests/api/reports/
-- docs/test-runs/$($runContext.RunId)/reports/接口自动化测试报告.md
-- docs/test-runs/$($runContext.RunId)/defects/接口缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/tests/api/reports/
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/接口自动化测试报告.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/接口缺陷清单.md
 
 ## 正文/核心内容
 - 测试批次：$($runContext.RunId)
@@ -71,9 +71,9 @@ function Write-ApiDocuments {
 - 执行命令：$CommandLine
 - 关键说明：$Summary
 - 原始结果路径：
-  - tests/api/reports/html/report.html
-  - tests/api/reports/junit/report.xml
-  - tests/api/reports/raw/api-test.log
+  - projects/$env:TEST_SYSTEM_ID/tests/api/reports/html/report.html
+  - projects/$env:TEST_SYSTEM_ID/tests/api/reports/junit/report.xml
+  - projects/$env:TEST_SYSTEM_ID/tests/api/reports/raw/api-test.log
 
 ## 执行结论
 - 本轮接口自动化状态：$ExecutionStatus。
@@ -115,12 +115,12 @@ function Write-ApiDocuments {
 接口自动化执行
 
 ## 输入文件
-- docs/cases/接口测试用例-评审版.md
-- docs/test-runs/$($runContext.RunId)/reports/API自动化覆盖矩阵.md
-- docs/test-runs/$($runContext.RunId)/reports/接口自动化测试报告.md
+- projects/$env:TEST_SYSTEM_ID/docs/cases/接口测试用例-评审版.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/API自动化覆盖矩阵.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/接口自动化测试报告.md
 
 ## 产出文件
-- docs/test-runs/$($runContext.RunId)/defects/接口缺陷清单.md
+- projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/defects/接口缺陷清单.md
 
 ## 正文/核心内容
 - 测试批次：$($runContext.RunId)
@@ -129,9 +129,9 @@ function Write-ApiDocuments {
 - 失败用例数：$defectCount
 - 结论摘要：$defectSummary
 - 证据入口：
-  - docs/test-runs/$($runContext.RunId)/reports/接口自动化测试报告.md
-  - tests/api/reports/junit/report.xml
-  - tests/api/reports/raw/api-test.log
+  - projects/$env:TEST_SYSTEM_ID/test-runs/$($runContext.RunId)/reports/接口自动化测试报告.md
+  - projects/$env:TEST_SYSTEM_ID/tests/api/reports/junit/report.xml
+  - projects/$env:TEST_SYSTEM_ID/tests/api/reports/raw/api-test.log
 
 ## 缺陷明细
 $defectRows
@@ -182,11 +182,29 @@ function Write-StageResult {
 
 $env:TEST_RUN_ID = $runContext.RunId
 $env:API_TIMEOUT_SECONDS = "$RequestTimeoutSeconds"
+
+# 从 system.yaml 加载系统配置
+$systemConfig = Get-SystemConfig
+
 if (-not $env:API_BASE_URL) {
-    $env:API_BASE_URL = "http://192.168.2.97:6089/prod-api"
+    if ($systemConfig.BaseUrl) {
+        $cleanBase = $systemConfig.BaseUrl.TrimEnd('/')
+        $cleanPath = $systemConfig.ApiBasePath.TrimStart('/')
+        $env:API_BASE_URL = "$cleanBase/$cleanPath"
+    } else {
+        $env:API_BASE_URL = "http://192.168.2.97:6089/prod-api"
+    }
 }
 if (-not $env:API_USERNAME) {
     $env:API_USERNAME = if ($env:TEST_USERNAME) { $env:TEST_USERNAME } else { "ZhaoShengYao" }
+}
+
+# 使用 system.yaml 配置的测试目录
+if ($systemConfig.ApiTestsDir) {
+    $testRoot = Join-Path $root $systemConfig.ApiTestsDir
+    if (Test-Path -LiteralPath $testRoot) {
+        Set-Location $testRoot
+    }
 }
 
 if ($ForceNotExecutedReason) {
@@ -264,10 +282,10 @@ $commandLine = "python -m pytest $($pytestArgs -join ' ')".Trim()
 $exitCode = $LASTEXITCODE
 
 $evidence = @(
-    "tests/api/reports",
-    "tests/api/reports/html/report.html",
-    "tests/api/reports/junit/report.xml",
-    "tests/api/reports/raw/api-test.log"
+    "projects/$env:TEST_SYSTEM_ID/tests/api/reports",
+    "projects/$env:TEST_SYSTEM_ID/tests/api/reports/html/report.html",
+    "projects/$env:TEST_SYSTEM_ID/tests/api/reports/junit/report.xml",
+    "projects/$env:TEST_SYSTEM_ID/tests/api/reports/raw/api-test.log"
 )
 
 $junitXmlPath = Join-Path $root "tests\api\reports\junit\report.xml"

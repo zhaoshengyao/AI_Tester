@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # ============================================================================
-# API 自动化测试 - Linux 原生执行脚本
+# API 自动化测试 - 通用执行脚本
 # 用法: ./scripts/run-api-tests.sh [MODE] [KEYWORD]
 #   MODE: smoke | full | failed-retest (默认 full)
 #   KEYWORD: pytest -k 过滤关键字 (可选)
 # 环境: 需要 Python 3.10+, pip, 可选 python3-venv
+# 配置: 从 projects/<system>/system.yaml 动态读取，无需修改脚本
 # ============================================================================
 
 set -euo pipefail
@@ -13,24 +14,24 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:-full}"
 KEYWORD="${2:-}"
 
-# 系统标识（由 run-full-test-flow.sh 通过环境变量传入）
-SYSTEM_ID="${TEST_SYSTEM_ID:-crm}"
+# ---------- 加载共享库 ----------
+# shellcheck disable=SC1090
+source "$ROOT/shared/lib/test_framework.sh"
+
+# ---------- 加载 system.yaml 配置 ----------
+load_system_config "$ROOT" "${TEST_SYSTEM_ID:-crm}"
 
 # ---------- 颜色输出 ----------
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# (已由共享库定义)
 
-log_info()  { echo -e "${CYAN}[INFO]${NC} $*"; }
-log_ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
-log_warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
+# ---------- 从 system.yaml 获取配置，回退到环境变量/默认值 ----------
+TEST_DIR="$ROOT/$(get_tests_dir api "tests/api/testsuites")"
+API_BASE_URL="$(get_api_base_url "http://192.168.2.97:6089/prod-api")"
+API_USERNAME="${API_USERNAME:-${TEST_USERNAME:-ZhaoShengYao}}"
+API_TIMEOUT_SECONDS="${API_TIMEOUT_SECONDS:-${SYS_TIMEOUT:-10}}"
 
-# ---------- 目录与文件 ----------
+# ---------- 批次/报告目录 ----------
 # 优先用 TEST_RUN_DIR（由 run-full-test-flow.sh 注入），实现批次隔离与并行安全
-TEST_DIR="$ROOT/tests/api"
 if [ -n "${TEST_RUN_DIR:-}" ]; then
     REPORT_DIR="$TEST_RUN_DIR/raw/api"
 else
@@ -45,43 +46,21 @@ HTML_FILE="$HTML_DIR/report.html"
 
 mkdir -p "$RAW_DIR" "$JUNIT_DIR" "$HTML_DIR"
 
-# ---------- 环境变量 ----------
-export API_BASE_URL="${API_BASE_URL:-http://192.168.2.97:6089/prod-api}"
-export API_USERNAME="${API_USERNAME:-${TEST_USERNAME:-ZhaoShengYao}}"
-export API_TIMEOUT_SECONDS="${API_TIMEOUT_SECONDS:-10}"
+# ---------- 导出环境变量供 pytest 使用 ----------
+export API_BASE_URL
+export API_USERNAME
+export API_TIMEOUT_SECONDS
 
 # ---------- Python 检查与虚拟环境 ----------
-PYTHON_BIN="python3"
-if ! command -v $PYTHON_BIN &>/dev/null; then
-    PYTHON_BIN="python"
-fi
-
-if ! command -v $PYTHON_BIN &>/dev/null; then
-    log_error "Python 未找到，请安装 Python 3.10+"
-    exit 1
-fi
+detect_python || exit 1
 
 PYTHON_VERSION=$($PYTHON_BIN -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 log_info "Python 版本: $PYTHON_VERSION ($($PYTHON_BIN --version 2>&1))"
 
 # 检查依赖
-if ! $PYTHON_BIN -c "import pytest, requests, yaml, pytest_html" &>/dev/null; then
+if ! check_python_deps pytest requests yaml pytest_html; then
     log_warn "Python 依赖未就绪，尝试创建虚拟环境..."
-    
-    if [ ! -d "$ROOT/.venv" ]; then
-        $PYTHON_BIN -m venv "$ROOT/.venv" 2>/dev/null || {
-            log_error "虚拟环境创建失败，请安装 python3-venv"
-            exit 1
-        }
-    fi
-    
-    # shellcheck disable=SC1091
-    source "$ROOT/.venv/bin/activate"
-    
-    pip install -q -r "$ROOT/requirements.txt" 2>/dev/null || {
-        log_error "依赖安装失败，请手动执行: pip install -r requirements.txt"
-        exit 1
-    }
+    install_python_deps "$ROOT" || exit 1
     log_ok "依赖已安装"
 else
     log_ok "依赖已就绪"
@@ -94,7 +73,6 @@ case "$MODE" in
         PYTEST_ARGS+=("-m" "smoke" "--maxfail=1")
         ;;
     full)
-        # 不加过滤，跑全部
         ;;
     failed-retest)
         PYTEST_ARGS+=("-m" "retest")
@@ -115,10 +93,12 @@ PYTEST_ARGS+=("--junitxml=$JUNIT_FILE" "--html=$HTML_FILE" "--self-contained-htm
 log_info "============================================"
 log_info "API 自动化测试"
 log_info "============================================"
+log_info "系统:       ${SYS_ID:-crm}"
 log_info "模式:       $MODE"
 log_info "关键字:     ${KEYWORD:-无}"
 log_info "API 地址:   $API_BASE_URL"
 log_info "超时(s):    $API_TIMEOUT_SECONDS"
+log_info "测试目录:   $TEST_DIR"
 log_info "报告目录:   $REPORT_DIR"
 log_info ""
 
@@ -165,12 +145,7 @@ else
 fi
 
 # ---------- 生成 Markdown 报告 ----------
-# 优先用 TEST_RUN_DIR（由 run-full-test-flow.sh 注入），避免并行时 ls -dt 找到错误批次
-if [ -n "${TEST_RUN_DIR:-}" ]; then
-    BATCH_DIR="$TEST_RUN_DIR"
-else
-    BATCH_DIR=$(ls -dt "$ROOT/docs/test-runs"/*/ 2>/dev/null | head -1)
-fi
+BATCH_DIR=$(get_batch_dir "$ROOT")
 if [ -n "$BATCH_DIR" ]; then
     mkdir -p "$BATCH_DIR/reports" "$BATCH_DIR/defects"
     REPORT_MD="$BATCH_DIR/reports/接口自动化测试报告.md"
@@ -194,6 +169,7 @@ if [ -n "$BATCH_DIR" ]; then
         echo "- pytest 关键字过滤：${KEYWORD:-未设置}"
         echo "- 接口地址：$API_BASE_URL"
         echo "- 请求超时秒数：$API_TIMEOUT_SECONDS"
+        echo "- 测试目录：$TEST_DIR"
         echo "- 执行耗时：${DURATION}s"
         echo "- 退出码：$EXIT_CODE"
         echo "- 执行命令：$COMMAND_LINE"

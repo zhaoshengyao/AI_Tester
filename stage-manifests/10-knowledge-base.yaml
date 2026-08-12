@@ -4,29 +4,29 @@ driver_type: skill
 required_inputs:
   - name: system-report
     paths:
-      - docs/test-runs/{run_id}/reports/系统测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/系统测试报告.md
     match: all
     path_type: file
   - name: batch-summary
     paths:
-      - docs/test-runs/{run_id}/批次摘要.md
+      - projects/{system}/test-runs/{run_id}/批次摘要.md
     match: all
     path_type: file
 required_outputs:
   - name: knowledge-main
     paths:
-      - docs/knowledge/测试知识库.md
+      - projects/{system}/docs/knowledge/测试知识库.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: knowledge-indexes
     paths:
-      - docs/knowledge/需求变更影响索引.md
-      - docs/knowledge/回归测试资产索引.md
-      - docs/knowledge/缺陷模式库.md
-      - docs/knowledge/自动化资产维护清单.md
-      - docs/knowledge/环境与工具问题库.md
-      - docs/knowledge/下一轮迭代测试建议.md
+      - projects/{system}/docs/knowledge/需求变更影响索引.md
+      - projects/{system}/docs/knowledge/回归测试资产索引.md
+      - projects/{system}/docs/knowledge/缺陷模式库.md
+      - projects/{system}/docs/knowledge/自动化资产维护清单.md
+      - projects/{system}/docs/knowledge/环境与工具问题库.md
+      - projects/{system}/docs/knowledge/下一轮迭代测试建议.md
     match: any
     path_type: file
 required_gates: []

@@ -1693,11 +1693,11 @@ function Write-FlowArtifacts {
 
 
 
-- `docs/cases/*-评审版.md`
+- `projects/$System/docs/cases/*-评审版.md`
 
 
 
-- `docs/test-runs/$RunId/reports/*覆盖矩阵.md`
+- `projects/$System/test-runs/$RunId/reports/*覆盖矩阵.md`
 
 
 
@@ -1713,31 +1713,31 @@ function Write-FlowArtifacts {
 
 
 
-- `docs/test-runs/$RunId/raw/run-logs/`
+- `projects/$System/test-runs/$RunId/raw/run-logs/`
 
 
 
-- `docs/test-runs/$RunId/reports/测试流程执行记录.md`
+- `projects/$System/test-runs/$RunId/reports/测试流程执行记录.md`
 
 
 
-- `docs/test-runs/$RunId/批次摘要.md`
+- `projects/$System/test-runs/$RunId/批次摘要.md`
 
 
 
-- `docs/test-runs/$RunId/reports/`
+- `projects/$System/test-runs/$RunId/reports/`
 
 
 
-- `docs/test-runs/$RunId/defects/`
+- `projects/$System/test-runs/$RunId/defects/`
 
 
 
-- `docs/test-runs/$RunId/raw/`
+- `projects/$System/test-runs/$RunId/raw/`
 
 
 
-- `docs/test-runs/$RunId/stage-status/`
+- `projects/$System/test-runs/$RunId/stage-status/`
 
 
 
@@ -1781,7 +1781,7 @@ function Write-FlowArtifacts {
 
 
 
-- 本轮归档：`docs/test-runs/$RunId/`
+- 本轮归档：`projects/$System/test-runs/$RunId/`
 
 
 
@@ -1937,15 +1937,15 @@ $($riskItems -join "`r`n")
 
 
 
-- `docs/test-runs/$RunId/reports/测试流程执行记录.md`
+- `projects/$System/test-runs/$RunId/reports/测试流程执行记录.md`
 
 
 
-- `docs/test-runs/$RunId/raw/run-logs/`
+- `projects/$System/test-runs/$RunId/raw/run-logs/`
 
 
 
-- `docs/test-runs/$RunId/stage-status/`
+- `projects/$System/test-runs/$RunId/stage-status/`
 
 
 
@@ -1957,7 +1957,7 @@ $($riskItems -join "`r`n")
 
 
 
-- `docs/test-runs/$RunId/批次摘要.md`
+- `projects/$System/test-runs/$RunId/批次摘要.md`
 
 
 
@@ -2017,27 +2017,27 @@ $($summaryRows -join "`r`n")
 
 
 
-- 执行记录：`docs/test-runs/$RunId/reports/测试流程执行记录.md`
+- 执行记录：`projects/$System/test-runs/$RunId/reports/测试流程执行记录.md`
 
 
 
-- 阶段状态：`docs/test-runs/$RunId/stage-status/`
+- 阶段状态：`projects/$System/test-runs/$RunId/stage-status/`
 
 
 
-- 执行日志：`docs/test-runs/$RunId/raw/run-logs/`
+- 执行日志：`projects/$System/test-runs/$RunId/raw/run-logs/`
 
 
 
-- 归档报告：`docs/test-runs/$RunId/reports/`
+- 归档报告：`projects/$System/test-runs/$RunId/reports/`
 
 
 
-- 归档缺陷：`docs/test-runs/$RunId/defects/`
+- 归档缺陷：`projects/$System/test-runs/$RunId/defects/`
 
 
 
-- 原始结果：`docs/test-runs/$RunId/raw/`
+- 原始结果：`projects/$System/test-runs/$RunId/raw/`
 
 
 

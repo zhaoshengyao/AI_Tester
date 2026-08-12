@@ -1,0 +1,19 @@
+============================= test session starts =============================
+collecting ... collected 8 items
+
+tests/api/ipd/test_auth_login.py::test_login_success_6_params_match_expected_conftest PASSED
+tests/api/ipd/test_auth_login.py::test_login_wrong_password_returns_500_msg_contains_keyword PASSED
+tests/api/ipd/test_auth_login.py::test_login_underscore_clientid_must_fail_camel_required PASSED
+tests/api/ipd/test_auth_login.py::test_login_underscore_granttype_must_fail_camel_required PASSED
+tests/api/ipd/test_auth_login.py::test_login_missing_tenantid_records_real_response_no_stack [INFO API-AUTH-005] 缺 tenantId 真实 code=200 msg=操作成功
+PASSED
+tests/api/ipd/test_auth_login.py::test_login_invalid_granttype_5_values_all_fail PASSED
+tests/api/ipd/test_auth_login.py::test_auth_code_captcha_disabled PASSED
+tests/api/ipd/test_auth_login.py::test_logout_post_invalidates_token [INFO sanity] GET /auth/logout HTTP=200（预期 405，不做断言）
+[INFO API-AUTH-009] logout 业务 code=200 msg=退出成功
+[INFO 非缺陷] JWT 默认到 exp 过期（常见实现），登出未立即拉入黑名单。不算缺陷。
+PASSED
+
+============================== 8 passed in 0.97s ==============================
+
+===== STDERR =====

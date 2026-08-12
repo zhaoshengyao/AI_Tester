@@ -88,19 +88,7 @@ if [ -f "$SYSTEM_YAML" ] && [ "$FORCE_SYSTEM" = false ]; then
         
         # 解析结果写入临时文件，再 source 回 shell 变量
         CONFIG_TMP=$(mktemp /tmp/test_scope_XXXXXX.sh)
-        $PYTHON_BIN << PYEOF
-import yaml
-try:
-    with open("$SYSTEM_YAML") as f:
-        config = yaml.safe_load(f)
-    scope = config.get("test_scope", {})
-    for test_type in ["api", "ui", "performance", "security"]:
-        enabled = scope.get(test_type, {}).get("enabled", False)
-        var_name = "YAML_ENABLED_" + test_type.upper()
-        print(f"{var_name}={'true' if enabled else 'false'}")
-except Exception as e:
-    pass
-PYEOF
+        
         $PYTHON_BIN -c "
 import yaml
 try:
@@ -160,7 +148,7 @@ fi
 # 格式: {timestamp}-{system}-{uuid8}，避免并行撞名
 SHORT_UUID=$(uuidgen 2>/dev/null | cut -c1-8 || python -c "import uuid; print(uuid.uuid4().hex[:8])")
 BATCH_ID="$(date +%Y%m%d-%H%M%S)-${SYSTEM_ID}-${SHORT_UUID}"
-BATCH_DIR="$ROOT/docs/test-runs/$BATCH_ID"
+BATCH_DIR="$ROOT/projects/$SYSTEM_ID/test-runs/$BATCH_ID"
 REPORT_DIR="$BATCH_DIR/reports"
 DEFECT_DIR="$BATCH_DIR/defects"
 mkdir -p "$REPORT_DIR" "$DEFECT_DIR" "$BATCH_DIR/raw"
@@ -710,8 +698,8 @@ cat > "$REPORT_DIR/性能测试专项报告.md" <<'PERFRPT'
 - 缺陷清单: ../defects/性能缺陷清单.md
 - 冒烟日志: ../raw/perf-smoke.log
 - 常规日志: ../raw/perf-regular.log
-- HTML 冒烟报告: ../../../tests/performance/locust/results/result_smoke.html
-- HTML 常规报告: ../../../tests/performance/locust/results/result_regular.html
+- HTML 冒烟报告: ../../tests/performance/locust/results/result_smoke.html
+- HTML 常规报告: ../../tests/performance/locust/results/result_regular.html
 
 ## 执行结论
 - 冒烟测试: 通过
@@ -775,7 +763,7 @@ cat > "$REPORT_DIR/安全扫描专项报告.md" <<'SECRPT'
 
 ## 产出文件
 - 缺陷清单: ../defects/安全缺陷清单.md
-- 原始报告: ../../../tests/security/reports/security-report-*.md
+- 原始报告: ../../tests/security/reports/security-report-*.md
 - 扫描日志: ../raw/security.log
 
 ## 下一步决策
@@ -852,7 +840,7 @@ cat > "$REPORT_DIR/系统测试报告.md" <<EOF
 
 ### 2.2 全量测试
 - **结果**: $API_FULL_STATUS (124 passed, 23 skipped)
-- **HTML 报告**: [report.html](../../../tests/api/reports/html/report.html)
+- **HTML 报告**: [report.html](../../tests/api/reports/html/report.html)
 - **日志**: [api-full.log](../raw/api-full.log)
 - **关联缺陷**: 见 [接口缺陷清单](../defects/接口缺陷清单.md)
 
@@ -867,7 +855,7 @@ cat > "$REPORT_DIR/系统测试报告.md" <<EOF
 
 ### 3.2 全量测试
 - **结果**: $UI_FULL_STATUS
-- **HTML 报告**: [playwright-report](../../../tests/ui/playwright-report/index.html)
+- **HTML 报告**: [playwright-report](../../tests/ui/playwright-report/index.html)
 - **日志**: [ui-full.log](../raw/ui-full.log)
 - **关联缺陷**: 见 [UI缺陷清单](../defects/UI缺陷清单.md)
 
@@ -879,7 +867,7 @@ cat > "$REPORT_DIR/系统测试报告.md" <<EOF
 - **结果**: $PERF_SMOKE_STATUS (5用户，0失败)
 - **专项报告**: [性能测试专项报告](./性能测试专项报告.md)
 - **覆盖矩阵**: [测试覆盖矩阵](./测试覆盖矩阵.md)
-- **HTML 报告**: [result_smoke.html](../../../tests/performance/locust/results/result_smoke.html)
+- **HTML 报告**: [result_smoke.html](../../tests/performance/locust/results/result_smoke.html)
 - **日志**: [perf-smoke.log](../raw/perf-smoke.log)
 
 ### 4.2 常规压测
@@ -977,10 +965,10 @@ cat > "$BATCH_DIR/批次摘要.md" <<EOF
 - [UI自动化测试报告](reports/UI自动化测试报告.md)
 $([ "$SKIP_PERF" = false ] && echo "- [性能测试专项报告](reports/性能测试专项报告.md)")
 $([ "$SKIP_SECURITY" = false ] && echo "- [安全扫描专项报告](reports/安全扫描专项报告.md)")
-- [API 测试 HTML 报告](../../../tests/api/reports/html/report.html)
-$([ "$SKIP_UI" = false ] && echo "- [UI 测试 HTML 报告](../../../tests/ui/playwright-report/index.html)")
-$([ "$SKIP_PERF" = false ] && echo "- [性能冒烟 HTML](../../../tests/performance/locust/results/result_smoke.html)")
-$([ "$SKIP_PERF" = false ] && echo "- [性能常规 HTML](../../../tests/performance/locust/results/result_regular.html)")
+- [API 测试 HTML 报告](../../tests/api/reports/html/report.html)
+$([ "$SKIP_UI" = false ] && echo "- [UI 测试 HTML 报告](../../tests/ui/playwright-report/index.html)")
+$([ "$SKIP_PERF" = false ] && echo "- [性能冒烟 HTML](../../tests/performance/locust/results/result_smoke.html)")
+$([ "$SKIP_PERF" = false ] && echo "- [性能常规 HTML](../../tests/performance/locust/results/result_regular.html)")
 
 ## 缺陷清单索引
 - [接口缺陷清单](defects/接口缺陷清单.md) ($DEFECT_TOTAL_API项)
@@ -1003,7 +991,7 @@ EOF
 log_ok "批次摘要已生成"
 
 # 创建 latest 软链接（按系统隔离，避免并行覆盖）
-LATEST_LINK="$ROOT/docs/test-runs/latest-$SYSTEM_ID"
+LATEST_LINK="$ROOT/projects/$SYSTEM_ID/test-runs/latest-$SYSTEM_ID"
 rm -f "$LATEST_LINK"
 ln -sf "$BATCH_DIR" "$LATEST_LINK"
 

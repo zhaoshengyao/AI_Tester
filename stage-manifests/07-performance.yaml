@@ -4,24 +4,24 @@ driver_type: script
 required_inputs:
   - name: reviewed-performance-case
     paths:
-      - docs/cases/性能测试用例-评审版.md
+      - projects/{system}/docs/cases/性能测试用例-评审版.md
     match: all
     path_type: file
 required_outputs:
   - name: performance-raw-report
     paths:
-      - tests/performance/results
+      - projects/{system}/tests/performance/results
     match: all
     path_type: dir
   - name: performance-formal-report
     paths:
-      - docs/test-runs/{run_id}/reports/性能测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/性能测试报告.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: performance-defect-doc
     paths:
-      - docs/test-runs/{run_id}/defects/性能缺陷清单.md
+      - projects/{system}/test-runs/{run_id}/defects/性能缺陷清单.md
     match: all
     path_type: file
     must_reference_run_id: true

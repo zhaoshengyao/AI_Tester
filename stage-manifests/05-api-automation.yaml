@@ -4,30 +4,30 @@ driver_type: script
 required_inputs:
   - name: reviewed-api-case
     paths:
-      - docs/cases/接口测试用例-评审版.md
+      - projects/{system}/docs/cases/接口测试用例-评审版.md
     match: all
     path_type: file
 required_outputs:
   - name: api-raw-report
     paths:
-      - tests/api/reports
+      - projects/{system}/tests/api/reports
     match: all
     path_type: dir
   - name: api-coverage-matrix
     paths:
-      - docs/test-runs/{run_id}/reports/API自动化覆盖矩阵.md
+      - projects/{system}/test-runs/{run_id}/reports/API自动化覆盖矩阵.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: api-formal-report
     paths:
-      - docs/test-runs/{run_id}/reports/接口自动化测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/接口自动化测试报告.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: api-defect-doc
     paths:
-      - docs/test-runs/{run_id}/defects/接口缺陷清单.md
+      - projects/{system}/test-runs/{run_id}/defects/接口缺陷清单.md
     match: all
     path_type: file
     must_reference_run_id: true

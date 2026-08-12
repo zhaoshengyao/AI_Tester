@@ -1,7 +1,11 @@
 # CRM 客户关系管理系统 - 通用描述文件
+# 任何新系统接入，只需创建/修改此文件，无需修改框架代码。
+# 详细字段说明参考: shared/schemas/system.yaml.schema.example
+
 id: crm
 name: CRM 客户关系管理系统
 
+# ------- 协议声明 -------
 protocols:
   default:
     type: http
@@ -10,6 +14,7 @@ protocols:
       api_base_path: "/prod-api"
       timeout: 30
 
+# ------- 认证声明 -------
 auth:
   type: oauth2
   config:
@@ -22,18 +27,36 @@ auth:
     password_field: "password"
     password_encryption: "aes-256-gcm"
 
+# ------- 测试范围声明 -------
 test_scope:
   api:
     enabled: true
+    tests_dir: "tests/api/testsuites/crm"
+    smoke_marker: "smoke"
   ui:
     enabled: true
+    tests_dir: "tests/ui/specs/crm"
+    base_url: "http://192.168.2.97:6089"
+    global_setup: "tests/ui/global-setup.ts"
   performance:
     enabled: true
+    tests_dir: "tests/performance/locust"
+    smoke:
+      users: 5
+      spawn_rate: 1
+      duration: "60s"
+    full:
+      users: 50
+      spawn_rate: 5
+      duration: "300s"
   security:
     enabled: true
+    tests_dir: "tests/security"
+    target_url: "http://192.168.2.97:6089"
 
+# ------- 路径映射 -------
 paths:
   test_cases: "docs/cases"
   test_data: "tests/data"
   env_file: ".env"
-  output_dir: "docs/test-runs"
+  output_dir: "test-runs"

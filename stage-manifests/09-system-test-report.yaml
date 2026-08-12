@@ -4,22 +4,22 @@ driver_type: skill
 required_inputs:
   - name: batch-summary
     paths:
-      - docs/test-runs/{run_id}/批次摘要.md
+      - projects/{system}/test-runs/{run_id}/批次摘要.md
     match: all
     path_type: file
   - name: execution-reports
     paths:
-      - docs/test-runs/{run_id}/reports/接口自动化测试报告.md
-      - docs/test-runs/{run_id}/reports/UI自动化测试报告.md
-      - docs/test-runs/{run_id}/reports/UI兼容性测试报告.md
-      - docs/test-runs/{run_id}/reports/性能测试报告.md
-      - docs/test-runs/{run_id}/reports/安全测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/接口自动化测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/UI自动化测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/UI兼容性测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/性能测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/安全测试报告.md
     match: any
     path_type: file
 required_outputs:
   - name: system-report
     paths:
-      - docs/test-runs/{run_id}/reports/系统测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/系统测试报告.md
     match: all
     path_type: file
     must_reference_run_id: true

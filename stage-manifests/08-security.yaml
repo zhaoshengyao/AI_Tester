@@ -4,24 +4,24 @@ driver_type: script
 required_inputs:
   - name: reviewed-security-case
     paths:
-      - docs/cases/安全测试用例-评审版.md
+      - projects/{system}/docs/cases/安全测试用例-评审版.md
     match: all
     path_type: file
 required_outputs:
   - name: security-raw-report
     paths:
-      - tests/security/reports
+      - projects/{system}/tests/security/reports
     match: all
     path_type: dir
   - name: security-formal-report
     paths:
-      - docs/test-runs/{run_id}/reports/安全测试报告.md
+      - projects/{system}/test-runs/{run_id}/reports/安全测试报告.md
     match: all
     path_type: file
     must_reference_run_id: true
   - name: security-defect-doc
     paths:
-      - docs/test-runs/{run_id}/defects/安全缺陷清单.md
+      - projects/{system}/test-runs/{run_id}/defects/安全缺陷清单.md
     match: all
     path_type: file
     must_reference_run_id: true
