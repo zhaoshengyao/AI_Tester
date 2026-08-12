@@ -10,7 +10,7 @@ import os
 import re
 from collections import Counter, defaultdict
 
-PROJECT_ROOT = r"d:\AICode\TestHub\AITestDemo"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 PROJ = "projects/ipd"
 CASES_DIR = f"{PROJECT_ROOT}/{PROJ}/docs/cases"
 

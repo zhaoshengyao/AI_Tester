@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -29,8 +30,11 @@ import pytest
 STATUS_ENUM = {"approved", "draft", "pending"}
 PHASE_ENUM = {"closed", "concept", "development", "plan"}
 
-BASELINE_FILE = Path(r"d:\AICode\TestHub\AITestDemo\projects\ipd\docs\analysis\项目状态流转接口实测.json")
-assert BASELINE_FILE.exists(), f"{BASELINE_FILE} 不存在；先跑 _probe_stages_and_dashboard_diff.py 生成基线"
+# 跨平台路径：基于 conftest.py 所在目录向上找项目根
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]  # tests/api/ipd/ → project root
+BASELINE_FILE = _PROJECT_ROOT / "projects" / "ipd" / "docs" / "analysis" / "项目状态流转接口实测.json"
+if not BASELINE_FILE.exists():
+    pytest.skip(f"{BASELINE_FILE} 不存在；先跑 _probe_stages_and_dashboard_diff.py 生成基线", allow_module_level=True)
 
 
 @pytest.fixture(scope="module")

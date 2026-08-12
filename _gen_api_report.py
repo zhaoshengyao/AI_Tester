@@ -13,7 +13,7 @@ import re
 from collections import Counter
 from datetime import datetime
 
-PROJECT_ROOT = r"d:\AICode\TestHub\AITestDemo"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 PROJ = "projects/ipd"
 
 

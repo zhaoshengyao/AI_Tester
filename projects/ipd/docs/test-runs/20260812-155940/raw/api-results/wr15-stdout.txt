@@ -1,0 +1,24 @@
+[RUN] WR12~15 共 4 条 ...
+[DONE] exitcode=0; duration=1.16s; stdout_chars=1152
+[OUT] /home/zhiwei/AutoTestHub/projects/ipd/docs/test-runs/20260812-155940/raw/api-results/pytest-wr15.json
+[SUMMARY] total=4 passed=4 failed=0 skipped=0 error=0 unknown=0 duration=1.16s
+
+----- STDOUT TAIL (last 60 lines) -----
+============================= test session starts ==============================
+collecting ... collected 4 items
+
+tests/api/ipd/test_wr_11_cases.py::Test_WR12_REJECT_PENDING_TO_DRAFT::test_wr12_reject_status_to_draft [WR-12] 驳回审批验证通过 ✅ status=pending→draft 成功
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR13_PHASE_BACK_PLAN_TO_CONCEPT::test_wr13_phase_back_to_concept [WR-13] 阶段回退验证通过 ✅ phase=plan→concept 成功
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR14_BUDGET_VALIDATION::test_wr14_budget_null_negative_empty [接口契约/业务校验一致性缺陷 WR-14] CREATE budget=null(budget未传字段) 返回 code=200 未拦截（预算未做非空/非负数校验）
+[接口契约/业务校验一致性缺陷 WR-14] CREATE budget=negative(budget=-999负数) 返回 code=200 未拦截（预算未做非空/非负数校验）
+[接口契约/业务校验一致性缺陷 WR-14] CREATE budget=empty_str(budget=''空字符串) 返回 code=200 未拦截（预算未做非空/非负数校验）
+PASSED
+tests/api/ipd/test_wr_11_cases.py::Test_WR15_MANAGERID_REQUIRED::test_wr15_managerid_null_zero [接口契约/业务校验一致性缺陷 WR-15] CREATE managerId=null(managerId未传字段) 返回 code=200 未拦截（负责人未做非空校验）
+[接口契约/业务校验一致性缺陷 WR-15] CREATE managerId=zero(managerId=0) 返回 code=200 未拦截（负责人未做非空校验）
+PASSED
+
+============================== 4 passed in 0.57s ===============================
+
+===== STDERR =====

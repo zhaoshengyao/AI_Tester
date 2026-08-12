@@ -6,9 +6,10 @@ from __future__ import annotations
 import json, os, re, subprocess, sys, time
 from pathlib import Path
 
-REPO = Path(r"d:\AICode\TestHub\AITestDemo")
+REPO = Path(__file__).resolve().parent
 TARGET = "tests/api/ipd/test_wr_11_cases.py"
-TS = "20260811-122314"
+# TS 由调用方 _ipd_run_api_pipeline.py 通过环境变量 IPD_RUN_ID 传入
+TS = os.environ.get("IPD_RUN_ID") or "20260811-122314"
 OUT_DIR = REPO / "projects" / "ipd" / "docs" / "test-runs" / TS / "raw" / "api-results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 JSON_OUT = OUT_DIR / "pytest-wr15.json"

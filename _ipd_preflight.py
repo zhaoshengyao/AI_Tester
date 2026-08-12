@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import os, sys, json, time
+# ROOT = 本脚本所在目录（跨平台自动适配）
+_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(__file__))
-sys.path.insert(0, r'd:/AICode/TestHub/AITestDemo/tests/api/ipd')
+sys.path.insert(0, os.path.join(_ROOT, 'tests', 'api', 'ipd'))
 try:
     from conftest import _load_dotenv, _load_system_yaml_auth, _do_login_request, _encrypt_aes_256_ecb_hex
     from pathlib import Path
     def _load_config_env():
-        env = _load_dotenv(Path(r'd:/AICode/TestHub/AITestDemo/projects/ipd/.env'))
-        auth_cfg = _load_system_yaml_auth(Path(r'd:/AICode/TestHub/AITestDemo/projects/ipd/system.yaml'))
+        env = _load_dotenv(Path(os.path.join(_ROOT, 'projects', 'ipd', '.env')))
+        auth_cfg = _load_system_yaml_auth(Path(os.path.join(_ROOT, 'projects', 'ipd', 'system.yaml')))
         return {
             'api_base_url': env.get('API_BASE_URL') or env.get('BASE_URL'),
             'base_url': env.get('BASE_URL'),
